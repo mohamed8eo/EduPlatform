@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Plus, Trash2, Save, ArrowLeft } from "lucide-react"
+import { Plus, Trash2, Save, ArrowLeft, Play } from "lucide-react"
 import { createCourse } from "@/lib/action/courses"
 import VideoUpload from "@/components/video-upload"
 import ImageUpload from "@/components/image-upload"
@@ -478,6 +478,8 @@ export default function CreateCoursePage() {
                               <VideoUpload
                                 onVideoChange={async (videoData) => {
                                   console.log('Video upload data:', videoData)
+                                  console.log('Cloudinary data:', videoData?.cloudinaryData)
+                                  console.log('Duration from cloudinaryData:', videoData?.cloudinaryData?.duration)
                                   
                                   // Update video file
                                   updateLesson(sectionIndex, lessonIndex, 'videoFile', videoData)
@@ -493,8 +495,13 @@ export default function CreateCoursePage() {
                                   
                                   if (videoData?.cloudinaryData?.duration) {
                                     // For uploaded videos, extract duration from Cloudinary data
-                                    duration = Math.round(videoData.cloudinaryData.duration / 60)
-                                    console.log('Extracted duration from Cloudinary:', duration, 'minutes')
+                                    // Cloudinary returns duration in seconds, convert to minutes
+                                    const durationInSeconds = videoData.cloudinaryData.duration
+                                    duration = Math.max(1, Math.round(durationInSeconds / 60))
+                                    console.log('Raw duration from Cloudinary (seconds):', durationInSeconds)
+                                    console.log('Calculated duration (minutes):', duration)
+                                    // Update duration immediately for uploaded videos
+                                    updateLesson(sectionIndex, lessonIndex, 'duration', duration)
                                   } else if (videoData?.url) {
                                     // For YouTube URLs, extract video ID and get duration
                                     const youtubeMatch = videoData.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
@@ -524,16 +531,23 @@ export default function CreateCoursePage() {
                                       // For other URLs, set a default duration
                                       updateLesson(sectionIndex, lessonIndex, 'duration', 5)
                                     }
-                                  }
-                                  
-                                  // Update duration immediately for uploaded videos
-                                  if (duration > 0) {
-                                    console.log('Updating duration to:', duration, 'minutes')
-                                    updateLesson(sectionIndex, lessonIndex, 'duration', duration)
+                                  } else {
+                                    // If no duration found, set a default
+                                    updateLesson(sectionIndex, lessonIndex, 'duration', 5)
                                   }
                                 }}
                                 currentVideo={lesson.videoFile}
                               />
+                              
+                              {/* Duration Display */}
+                              {lesson.duration && lesson.duration > 0 && (
+                                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                                  <p className="text-sm text-green-700 flex items-center gap-2">
+                                    <Play className="h-4 w-4" />
+                                    Duration: {lesson.duration} minutes
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           )}
 

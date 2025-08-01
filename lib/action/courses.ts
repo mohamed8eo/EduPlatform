@@ -407,20 +407,23 @@ export const deleteCourse = async (courseId: string) => {
   try {
     const { userId } = await auth()
     if (!userId) throw new Error('Unauthorized')
-
+    
     const user = await prisma.user.findUnique({ where: { clerkId: userId } })
     if (!user) throw new Error('User not found')
 
-    // Check if user owns the course
-    const existingCourse = await prisma.course.findUnique({
-      where: { id: courseId },
-      select: { creatorId: true }
+    // Check if course exists and belongs to user
+    const course = await prisma.course.findFirst({
+      where: {
+        id: courseId,
+        creatorId: user.id
+      }
     })
 
-    if (!existingCourse || existingCourse.creatorId !== user.id) {
-      throw new Error('Unauthorized to delete this course')
+    if (!course) {
+      throw new Error('Course not found or unauthorized')
     }
 
+    // Delete the course (this will cascade delete sections and lessons)
     await prisma.course.delete({
       where: { id: courseId }
     })
@@ -430,6 +433,48 @@ export const deleteCourse = async (courseId: string) => {
   } catch (error) {
     console.error('Error deleting course:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Failed to delete course' }
+  }
+}
+
+export const toggleCourseFeature = async (courseId: string, feature: 'hasCertificate' | 'hasDownloads' | 'hasDiscussions' | 'hasLifetimeAccess' | 'hasMobileAccess') => {
+  try {
+    const { userId } = await auth()
+    if (!userId) throw new Error('Unauthorized')
+    
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } })
+    if (!user) throw new Error('User not found')
+
+    // Check if course exists and belongs to user
+    const course = await prisma.course.findFirst({
+      where: {
+        id: courseId,
+        creatorId: user.id
+      }
+    })
+
+    if (!course) {
+      throw new Error('Course not found or unauthorized')
+    }
+
+    // Toggle the feature
+    const updatedCourse = await prisma.course.update({
+      where: { id: courseId },
+      data: {
+        [feature]: !course[feature]
+      }
+    })
+
+    revalidatePath('/dashboard/courses')
+    revalidatePath(`/dashboard/courses/${courseId}`)
+    
+    return { 
+      success: true, 
+      [feature]: updatedCourse[feature],
+      message: `${feature.replace('has', '').toLowerCase()} ${updatedCourse[feature] ? 'enabled' : 'disabled'} successfully`
+    }
+  } catch (error) {
+    console.error('Error toggling course feature:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to toggle feature' }
   }
 }
 

@@ -132,15 +132,18 @@ export default function CoursesManagementPage() {
   }
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
-    if (diffDays === 1) return "1 day ago"
-    if (diffDays < 7) return `${diffDays} days ago`
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
-    return `${Math.floor(diffDays / 30)} months ago`
+    return new Date(dateString).toLocaleDateString()
+  }
+
+  // Helper functions to calculate course totals
+  const calculateTotalLessons = (sections: Course['sections'] | undefined) => {
+    return sections?.reduce((total, section) => total + section.lessons.length, 0) || 0
+  }
+
+  const calculateTotalDuration = (sections: Course['sections'] | undefined) => {
+    return sections?.reduce((total, section) => 
+      total + section.lessons.reduce((sectionTotal, lesson) => 
+        sectionTotal + (lesson.duration || 0), 0), 0) || 0
   }
 
   const handleDeleteCourse = async (courseId: string, courseTitle: string) => {
@@ -307,7 +310,7 @@ export default function CoursesManagementPage() {
                             </div>
                             <div className="flex items-center space-x-2">
                               <Clock className="h-4 w-4 text-muted-foreground" />
-                              <span>{formatDuration(course.totalDuration)}</span>
+                              <span>{formatDuration(calculateTotalDuration(course.sections))}</span>
                             </div>
                           </div>
                         )}
@@ -315,9 +318,9 @@ export default function CoursesManagementPage() {
                         <div>
                           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
                             <span>Course Progress</span>
-                            <span>{course.totalLessons} lessons</span>
+                            <span>{calculateTotalLessons(course.sections)} lessons</span>
                           </div>
-                          <Progress value={(course.totalLessons / Math.max(course.totalLessons, 1)) * 100} className="h-2" />
+                          <Progress value={(calculateTotalLessons(course.sections) / Math.max(calculateTotalLessons(course.sections), 1)) * 100} className="h-2" />
                         </div>
 
                         <div className="flex items-center justify-between pt-4 border-t">

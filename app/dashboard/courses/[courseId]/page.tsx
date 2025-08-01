@@ -43,6 +43,7 @@ import {
 import { getCourse } from '@/lib/action/courses'
 import { toast } from "sonner"
 import VideoPlayer from '@/components/video-player'
+import { toggleCourseFeature } from '@/lib/action/courses'
 
 interface Lesson {
   id: string
@@ -152,11 +153,18 @@ export default function CourseDetailsPage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    })
+    return new Date(dateString).toLocaleDateString()
+  }
+
+  // Helper functions to calculate course totals
+  const calculateTotalLessons = (sections: Section[] | undefined) => {
+    return sections?.reduce((total, section) => total + section.lessons.length, 0) || 0
+  }
+
+  const calculateTotalDuration = (sections: Section[] | undefined) => {
+    return sections?.reduce((total, section) => 
+      total + section.lessons.reduce((sectionTotal, lesson) => 
+        sectionTotal + (lesson.duration || 0), 0), 0) || 0
   }
 
   const handleEditCourse = () => {
@@ -202,8 +210,8 @@ export default function CourseDetailsPage() {
         status: course.status,
         studentsCount: course.studentsCount,
         rating: course.rating,
-        totalLessons: course.totalLessons,
-        totalDuration: course.totalDuration,
+        totalLessons: calculateTotalLessons(course.sections),
+        totalDuration: calculateTotalDuration(course.sections),
         createdAt: course.createdAt,
         updatedAt: course.updatedAt,
         sections: course.sections?.map(section => ({
@@ -256,6 +264,29 @@ export default function CourseDetailsPage() {
       type: videoType,
       title: lesson.title
     })
+  }
+
+  const handleToggleFeature = async (feature: 'hasCertificate' | 'hasDownloads' | 'hasDiscussions' | 'hasLifetimeAccess' | 'hasMobileAccess') => {
+    if (!course) return
+
+    try {
+      const result = await toggleCourseFeature(course.id, feature)
+      
+      if (result.success) {
+        // Update the course state with the new feature value
+        setCourse(prev => prev ? {
+          ...prev,
+          [feature]: (result as any)[feature]
+        } : null)
+        
+        toast.success(result.message)
+      } else {
+        toast.error(result.error || 'Failed to toggle feature')
+      }
+    } catch (error) {
+      console.error('Error toggling feature:', error)
+      toast.error('An error occurred while updating the feature')
+    }
   }
 
   if (isLoading) {
@@ -356,7 +387,7 @@ export default function CourseDetailsPage() {
               <div className="flex items-center space-x-2">
                 <Clock className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <p className="text-sm font-medium">{formatDuration(course.totalDuration)}</p>
+                  <p className="text-sm font-medium">{formatDuration(calculateTotalDuration(course.sections))}</p>
                   <p className="text-xs text-muted-foreground">Duration</p>
                 </div>
               </div>
@@ -424,7 +455,7 @@ export default function CourseDetailsPage() {
                   <CardHeader>
                     <CardTitle>Course Content</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      {course.totalLessons} lessons • {formatDuration(course.totalDuration)}
+                      {calculateTotalLessons(course.sections)} lessons • {formatDuration(calculateTotalDuration(course.sections))}
                     </p>
                   </CardHeader>
                   <CardContent>
@@ -438,7 +469,7 @@ export default function CourseDetailsPage() {
                                 <p className="text-sm text-muted-foreground">{section.description}</p>
                               </div>
                               <div className="text-sm text-muted-foreground">
-                                {section.lessons.length} lessons • {formatDuration(section.duration)}
+                                {section.lessons.length} lessons • {formatDuration(section.lessons.reduce((total, lesson) => total + (lesson.duration || 0), 0))}
                               </div>
                             </div>
                           </div>
@@ -547,7 +578,7 @@ export default function CourseDetailsPage() {
                           <p className="font-medium">Certificate</p>
                           <p className="text-sm text-muted-foreground">Allow completion certificates</p>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleToggleFeature('hasCertificate')}>
                           {course.hasCertificate ? <CheckCircle className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                         </Button>
                       </div>
@@ -557,7 +588,7 @@ export default function CourseDetailsPage() {
                           <p className="font-medium">Downloads</p>
                           <p className="text-sm text-muted-foreground">Allow resource downloads</p>
                         </div>
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" onClick={() => handleToggleFeature('hasDownloads')}>
                           {course.hasDownloads ? <CheckCircle className="h-4 w-4" /> : <Lock className="h-4 w-4" />}
                         </Button>
                       </div>
@@ -623,15 +654,33 @@ export default function CourseDetailsPage() {
                 <CardTitle>Course Features</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Award className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Certificate</span>
-                  {course.hasCertificate ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Award className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Certificate</span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleToggleFeature('hasCertificate')}
+                    className="h-6 w-6 p-0"
+                  >
+                    {course.hasCertificate ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <Download className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">Downloads</span>
-                  {course.hasDownloads ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Download className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">Downloads</span>
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleToggleFeature('hasDownloads')}
+                    className="h-6 w-6 p-0"
+                  >
+                    {course.hasDownloads ? <CheckCircle className="h-4 w-4 text-green-500" /> : <Lock className="h-4 w-4 text-muted-foreground" />}
+                  </Button>
                 </div>
                 <div className="flex items-center space-x-2">
                   <MessageCircle className="h-4 w-4 text-muted-foreground" />

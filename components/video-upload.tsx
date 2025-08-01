@@ -50,6 +50,9 @@ export default function VideoUpload({ onVideoChange, currentVideo }: VideoUpload
         // Upload to Cloudinary immediately
         const cloudinaryResult = await uploadFile(file, 'video')
         
+        console.log('Cloudinary upload result:', cloudinaryResult)
+        console.log('Duration from Cloudinary:', cloudinaryResult.duration)
+        
         onVideoChange({ 
           type: 'file', 
           file,

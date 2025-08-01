@@ -520,8 +520,13 @@ export default function EditCoursePage() {
                                   
                                   if (videoData?.cloudinaryData?.duration) {
                                     // For uploaded videos, extract duration from Cloudinary data
-                                    duration = Math.round(videoData.cloudinaryData.duration / 60)
-                                    console.log('Extracted duration from Cloudinary:', duration, 'minutes')
+                                    // Cloudinary returns duration in seconds, convert to minutes
+                                    const durationInSeconds = videoData.cloudinaryData.duration
+                                    duration = Math.max(1, Math.round(durationInSeconds / 60))
+                                    console.log('Raw duration from Cloudinary (seconds):', durationInSeconds)
+                                    console.log('Calculated duration (minutes):', duration)
+                                    // Update duration immediately for uploaded videos
+                                    updateLesson(sectionIndex, lessonIndex, 'duration', duration)
                                   } else if (videoData?.url) {
                                     // For YouTube URLs, extract video ID and get duration
                                     const youtubeMatch = videoData.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
@@ -551,16 +556,23 @@ export default function EditCoursePage() {
                                       // For other URLs, set a default duration
                                       updateLesson(sectionIndex, lessonIndex, 'duration', 5)
                                     }
-                                  }
-                                  
-                                  // Update duration immediately for uploaded videos
-                                  if (duration > 0) {
-                                    console.log('Updating duration to:', duration, 'minutes')
-                                    updateLesson(sectionIndex, lessonIndex, 'duration', duration)
+                                  } else {
+                                    // If no duration found, set a default
+                                    updateLesson(sectionIndex, lessonIndex, 'duration', 5)
                                   }
                                 }}
                                 currentVideo={lesson.videoUrl ? { type: 'url', url: lesson.videoUrl } : undefined}
                               />
+                              
+                              {/* Duration Display */}
+                              {lesson.duration && lesson.duration > 0 && (
+                                <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded">
+                                  <p className="text-sm text-green-700 flex items-center gap-2">
+                                    <Play className="h-4 w-4" />
+                                    Duration: {lesson.duration} minutes
+                                  </p>
+                                </div>
+                              )}
                             </div>
                           )}
 
