@@ -42,6 +42,7 @@ import {
 } from "lucide-react"
 import { getCourse } from '@/lib/action/courses'
 import { toast } from "sonner"
+import VideoPlayer from '@/components/video-player'
 
 interface Lesson {
   id: string
@@ -104,6 +105,7 @@ export default function CourseDetailsPage() {
   const router = useRouter()
   const [course, setCourse] = useState<Course | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedVideo, setSelectedVideo] = useState<{ url: string; type: string; title: string } | null>(null)
   const [activeTab, setActiveTab] = useState("overview")
 
   useEffect(() => {
@@ -231,6 +233,29 @@ export default function CourseDetailsPage() {
       
       toast.success("Course data exported successfully!")
     }
+  }
+
+  const handleVideoClick = (lesson: Lesson) => {
+    if (!lesson.videoUrl) {
+      toast.error("No video available for this lesson")
+      return
+    }
+
+    // Determine video type
+    let videoType: 'cloudinary' | 'youtube' | 'vimeo' | 'external' = 'external'
+    if (lesson.videoUrl.includes('youtube.com') || lesson.videoUrl.includes('youtu.be')) {
+      videoType = 'youtube'
+    } else if (lesson.videoUrl.includes('vimeo.com')) {
+      videoType = 'vimeo'
+    } else if (lesson.videoUrl.includes('cloudinary.com')) {
+      videoType = 'cloudinary'
+    }
+
+    setSelectedVideo({
+      url: lesson.videoUrl,
+      type: videoType,
+      title: lesson.title
+    })
   }
 
   if (isLoading) {
@@ -422,7 +447,12 @@ export default function CourseDetailsPage() {
                               {section.lessons?.map((lesson, lessonIndex) => (
                                 <div key={lesson.id} className="flex items-center justify-between py-2">
                                   <div className="flex items-center space-x-3">
-                                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                                    <div 
+                                      className={`w-8 h-8 rounded-full bg-muted flex items-center justify-center ${
+                                        lesson.type === 'VIDEO' && lesson.videoUrl ? 'cursor-pointer hover:bg-muted-foreground/20' : ''
+                                      }`}
+                                      onClick={() => lesson.type === 'VIDEO' && lesson.videoUrl && handleVideoClick(lesson)}
+                                    >
                                       {lesson.type === 'VIDEO' ? (
                                         <Play className="h-4 w-4" />
                                       ) : (
@@ -618,6 +648,16 @@ export default function CourseDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Video Player Modal */}
+      {selectedVideo && (
+        <VideoPlayer
+          videoUrl={selectedVideo.url}
+          videoType={selectedVideo.type as 'cloudinary' | 'youtube' | 'vimeo' | 'external'}
+          title={selectedVideo.title}
+          onClose={() => setSelectedVideo(null)}
+        />
+      )}
     </div>
   )
 }

@@ -223,7 +223,7 @@ export default function EditCoursePage() {
             title: lesson.title,
             description: lesson.description,
             content: lesson.content,
-            videoUrl: lesson.videoFile?.url || lesson.videoUrl,
+            videoUrl: lesson.videoUrl || lesson.videoFile?.url || '',
             duration: lesson.duration || 0,
             type: lesson.type || 'VIDEO',
             isPreview: lesson.isPreview || false,
@@ -234,6 +234,9 @@ export default function EditCoursePage() {
       }
       
       console.log('Updating course with clean data:', cleanCourseData)
+      console.log('Video URLs in lessons:', cleanCourseData.sections.map(section => 
+        section.lessons.map(lesson => ({ title: lesson.title, videoUrl: lesson.videoUrl }))
+      ))
       
       const result = await updateCourse(params.editId as string, cleanCourseData)
       console.log('Course update result:', result)
@@ -257,8 +260,8 @@ export default function EditCoursePage() {
     <div className="min-h-screen pt-20">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="ghost" onClick={() => router.back()}>
+        <div className="flex lg:flex-row flex-col items-center gap-4 mb-8">
+          <Button variant="ghost" onClick={() => router.back()} className='w-full lg:w-auto justify-start '>
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
@@ -266,16 +269,34 @@ export default function EditCoursePage() {
             <h1 className="text-3xl font-bold">Edit Course</h1>
             <p className="text-muted-foreground">Update your course information and content</p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline">
-              <Eye className="h-4 w-4 mr-2" />
-              Preview
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              <Save className="h-4 w-4 mr-2" />
-              {isLoading ? "Saving..." : "Save Changes"}
-            </Button>
-          </div>
+                     <div className="flex gap-2">
+             <Button variant="outline">
+               <Eye className="h-4 w-4 mr-2" />
+               Preview
+             </Button>
+             <Button
+               variant="outline"
+               onClick={() => {
+                 setCourseData(prev => ({
+                   ...prev,
+                   sections: prev.sections.map(section => ({
+                     ...section,
+                     lessons: section.lessons.map(lesson => ({
+                       ...lesson,
+                       duration: lesson.duration || 0
+                     }))
+                   }))
+                 }))
+                 toast.success("Section durations recalculated!")
+               }}
+             >
+               Recalculate Durations
+             </Button>
+             <Button onClick={handleSave} disabled={isLoading}>
+               <Save className="h-4 w-4 mr-2" />
+               {isLoading ? "Saving..." : "Save Changes"}
+             </Button>
+           </div>
         </div>
 
         {/* Course Information */}
@@ -482,32 +503,76 @@ export default function EditCoursePage() {
                             <div className="space-y-2">
                               <Label>Video Upload</Label>
                               <VideoUpload
-                                onVideoChange={(videoData) => updateLesson(sectionIndex, lessonIndex, 'videoFile', videoData)}
+                                onVideoChange={async (videoData) => {
+                                  console.log('Video upload data:', videoData)
+                                  
+                                  // Update video file
+                                  updateLesson(sectionIndex, lessonIndex, 'videoFile', videoData)
+                                  
+                                  // Also update the videoUrl field for proper saving
+                                  if (videoData?.url) {
+                                    console.log('Updating videoUrl to:', videoData.url)
+                                    updateLesson(sectionIndex, lessonIndex, 'videoUrl', videoData.url)
+                                  }
+                                  
+                                  // Extract and update duration automatically
+                                  let duration = 0
+                                  
+                                  if (videoData?.cloudinaryData?.duration) {
+                                    // For uploaded videos, extract duration from Cloudinary data
+                                    duration = Math.round(videoData.cloudinaryData.duration / 60)
+                                    console.log('Extracted duration from Cloudinary:', duration, 'minutes')
+                                  } else if (videoData?.url) {
+                                    // For YouTube URLs, extract video ID and get duration
+                                    const youtubeMatch = videoData.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+                                    if (youtubeMatch) {
+                                      const videoId = youtubeMatch[1]
+                                      console.log('YouTube video ID:', videoId)
+                                      
+                                      try {
+                                        const response = await fetch(`/api/youtube-duration?videoId=${videoId}`)
+                                        const data = await response.json()
+                                        
+                                        if (data.duration) {
+                                          const durationInMinutes = Math.round(data.duration / 60)
+                                          console.log('YouTube duration:', durationInMinutes, 'minutes')
+                                          updateLesson(sectionIndex, lessonIndex, 'duration', durationInMinutes)
+                                        } else {
+                                          console.error('YouTube API error:', data.error)
+                                          toast.error(`YouTube API error: ${data.error || 'Unknown error'}`)
+                                          updateLesson(sectionIndex, lessonIndex, 'duration', 5)
+                                        }
+                                      } catch (error) {
+                                        console.error('Error fetching YouTube duration:', error)
+                                        toast.error('Failed to fetch YouTube video duration')
+                                        updateLesson(sectionIndex, lessonIndex, 'duration', 5)
+                                      }
+                                    } else {
+                                      // For other URLs, set a default duration
+                                      updateLesson(sectionIndex, lessonIndex, 'duration', 5)
+                                    }
+                                  }
+                                  
+                                  // Update duration immediately for uploaded videos
+                                  if (duration > 0) {
+                                    console.log('Updating duration to:', duration, 'minutes')
+                                    updateLesson(sectionIndex, lessonIndex, 'duration', duration)
+                                  }
+                                }}
                                 currentVideo={lesson.videoUrl ? { type: 'url', url: lesson.videoUrl } : undefined}
                               />
                             </div>
                           )}
 
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="checkbox"
-                                id={`preview-${sectionIndex}-${lessonIndex}`}
-                                checked={lesson.isPreview}
-                                onChange={(e) => updateLesson(sectionIndex, lessonIndex, 'isPreview', e.target.checked)}
-                                className="rounded"
-                              />
-                              <Label htmlFor={`preview-${sectionIndex}-${lessonIndex}`}>Preview Lesson</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Label>Duration (minutes)</Label>
-                              <Input
-                                type="number"
-                                value={lesson.duration || 0}
-                                onChange={(e) => updateLesson(sectionIndex, lessonIndex, 'duration', parseInt(e.target.value) || 0)}
-                                className="w-20"
-                              />
-                            </div>
+                          <div className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`preview-${sectionIndex}-${lessonIndex}`}
+                              checked={lesson.isPreview}
+                              onChange={(e) => updateLesson(sectionIndex, lessonIndex, 'isPreview', e.target.checked)}
+                              className="rounded"
+                            />
+                            <Label htmlFor={`preview-${sectionIndex}-${lessonIndex}`}>Preview Lesson</Label>
                           </div>
                         </div>
                       </div>

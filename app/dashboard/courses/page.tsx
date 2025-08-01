@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Search, Filter, Plus, Edit, Eye, Trash2, Users, DollarSign, Star, Clock, MoreVertical } from "lucide-react"
 import { gsap } from "gsap"
-import { getCourses } from "@/lib/action/courses"
+import { getCourses, deleteCourse } from "@/lib/action/courses"
 import { toast } from "sonner"
 
 interface Course {
@@ -64,9 +64,11 @@ export default function CoursesManagementPage() {
           }))
           setCourses(normalizedCourses)
         } else {
-          toast.error("Failed to fetch courses")
+          console.error('Error fetching courses:', result.error)
+          toast.error(result.error || "Failed to fetch courses")
         }
-        console.error('Error fetching courses:')
+      } catch (error) {
+        console.error('Error fetching courses:', error)
         toast.error("Error loading courses")
       } finally {
         setIsLoading(false)
@@ -139,6 +141,29 @@ export default function CoursesManagementPage() {
     if (diffDays < 7) return `${diffDays} days ago`
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
     return `${Math.floor(diffDays / 30)} months ago`
+  }
+
+  const handleDeleteCourse = async (courseId: string, courseTitle: string) => {
+    try {
+      const result = await deleteCourse(courseId)
+      if (result.success) {
+        toast.success(`Course "${courseTitle}" deleted successfully`)
+        // Refresh the courses list
+        const updatedResult = await getCourses()
+        if (updatedResult.success) {
+          const normalizedCourses = (updatedResult.courses || []).map((course: any) => ({
+            ...course,
+            thumbnail: course.thumbnail === null ? undefined : course.thumbnail,
+          }))
+          setCourses(normalizedCourses)
+        }
+      } else {
+        toast.error(result.error || "Failed to delete course")
+      }
+    } catch (error) {
+      console.error('Error deleting course:', error)
+      toast.error("An error occurred while deleting the course")
+    }
   }
 
   const stats = {
@@ -312,6 +337,7 @@ export default function CoursesManagementPage() {
                               variant="outline"
                               size="sm"
                               className="text-destructive hover:text-destructive bg-transparent"
+                              onClick={() => handleDeleteCourse(course.id, course.title)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

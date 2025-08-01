@@ -65,6 +65,7 @@ interface CourseData {
   description: string
   price: number
   category: string
+  totalDuration?: number
   thumbnailUrl?: string
   previewVideoUrl?: string
   sections: {
@@ -101,15 +102,25 @@ export const createCourse = async (courseData: CourseData) => {
     const slug = courseData.title.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
 
     // Get or create category
+    const categoryName = courseData.category.charAt(0).toUpperCase() + courseData.category.slice(1)
+    
+    // First try to find by slug
     let category = await prisma.category.findUnique({
       where: { slug: courseData.category }
     })
+
+    // If not found by slug, try to find by name
+    if (!category) {
+      category = await prisma.category.findFirst({
+        where: { name: categoryName }
+      })
+    }
 
     if (!category) {
       // Create default category if it doesn't exist
       category = await prisma.category.create({
         data: {
-          name: courseData.category.charAt(0).toUpperCase() + courseData.category.slice(1),
+          name: categoryName,
           slug: courseData.category,
           description: `${courseData.category} courses`
         }
@@ -129,6 +140,7 @@ export const createCourse = async (courseData: CourseData) => {
         description: courseData.description,
         longDescription: courseData.description,
         price: courseData.price,
+        totalDuration: courseData.totalDuration || 0,
         level: 'BEGINNER',
         language: 'en',
         status: 'DRAFT',
@@ -269,22 +281,110 @@ export const updateCourse = async (courseId: string, courseData: Partial<CourseD
       throw new Error('Unauthorized to update this course')
     }
 
+    // Get or create category if category is provided
+    let categoryId = undefined
+    if (courseData.category) {
+      const categoryName = courseData.category.charAt(0).toUpperCase() + courseData.category.slice(1)
+      
+      // First try to find by slug
+      let category = await prisma.category.findUnique({
+        where: { slug: courseData.category }
+      })
+
+      // If not found by slug, try to find by name
+      if (!category) {
+        category = await prisma.category.findFirst({
+          where: { name: categoryName }
+        })
+      }
+
+      if (!category) {
+        // Create default category if it doesn't exist
+        category = await prisma.category.create({
+          data: {
+            name: categoryName,
+            slug: courseData.category,
+            description: `${courseData.category} courses`
+          }
+        })
+      }
+      categoryId = category.id
+    }
+
     // Get thumbnail URL
     const thumbnailUrl = courseData.thumbnailUrl
 
     // Get preview video URL
     const previewVideoUrl = courseData.previewVideoUrl || ''
 
+    // First update the course basic information
     const course = await prisma.course.update({
       where: { id: courseId },
       data: {
         title: courseData.title,
         description: courseData.description,
         price: courseData.price,
-        categoryId: courseData.category,
+        ...(categoryId && { categoryId }),
         thumbnail: thumbnailUrl,
         previewVideo: previewVideoUrl,
-      },
+      }
+    })
+
+    // Update sections and lessons if provided
+    if (courseData.sections) {
+      // Delete existing sections and lessons
+      await prisma.lesson.deleteMany({
+        where: {
+          section: {
+            courseId: courseId
+          }
+        }
+      })
+      
+      await prisma.section.deleteMany({
+        where: {
+          courseId: courseId
+        }
+      })
+
+      // Create new sections and lessons
+      for (let sectionIndex = 0; sectionIndex < courseData.sections.length; sectionIndex++) {
+        const section = courseData.sections[sectionIndex]
+        
+        const createdSection = await prisma.section.create({
+          data: {
+            title: section.title,
+            description: section.description,
+            order: sectionIndex + 1,
+            courseId: courseId,
+          }
+        })
+
+        // Create lessons for this section
+        for (let lessonIndex = 0; lessonIndex < section.lessons.length; lessonIndex++) {
+          const lesson = section.lessons[lessonIndex]
+          
+          await prisma.lesson.create({
+            data: {
+              title: lesson.title,
+              description: lesson.description,
+              content: lesson.content,
+              videoUrl: lesson.videoUrl || '',
+              duration: lesson.duration || 0,
+              order: lessonIndex + 1,
+              type: (lesson.type as 'VIDEO' | 'TEXT' | 'QUIZ' | 'ASSIGNMENT') || 'VIDEO',
+              isPreview: lesson.isPreview || false,
+              sectionId: createdSection.id,
+              resources: lesson.cloudinaryData ? lesson.cloudinaryData : null,
+            }
+          })
+        }
+      }
+    }
+
+    // Fetch the updated course with sections and lessons
+    const updatedCourse = await prisma.course.findUnique({
+      where: { id: courseId },
       include: {
         sections: {
           include: {
@@ -296,7 +396,7 @@ export const updateCourse = async (courseId: string, courseData: Partial<CourseD
 
     revalidatePath('/dashboard/courses')
     revalidatePath(`/dashboard/courses/${courseId}`)
-    return { success: true, course }
+    return { success: true, course: updatedCourse }
   } catch (error) {
     console.error('Error updating course:', error)
     return { success: false, error: error instanceof Error ? error.message : 'Failed to update course' }

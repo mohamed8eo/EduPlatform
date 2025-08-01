@@ -78,6 +78,7 @@ interface CourseData {
   description: string
   price: number
   category: string
+  totalDuration: number
   thumbnailUrl?: string
   thumbnailFile?: ImageData | null
   previewVideo?: VideoData | null
@@ -92,8 +93,31 @@ export default function CreateCoursePage() {
     description: "",
     price: 0,
     category: "",
+    totalDuration: 0,
     sections: []
   })
+
+  // Helper function to handle number-only input
+  const handleNumberInput = (value: string, setter: (value: number) => void) => {
+    // Only allow numbers and decimal point
+    const numericValue = value.replace(/[^0-9.]/g, '')
+    
+    // Prevent multiple decimal points
+    const parts = numericValue.split('.')
+    if (parts.length > 2) {
+      return
+    }
+    
+    // Allow empty string or valid number
+    if (numericValue === '' || numericValue === '.') {
+      setter(0)
+    } else {
+      const numValue = parseFloat(numericValue)
+      if (!isNaN(numValue)) {
+        setter(numValue)
+      }
+    }
+  }
 
   const addSection = () => {
     setCourseData(prev => ({
@@ -167,8 +191,8 @@ export default function CreateCoursePage() {
   }
 
   const handleSave = async () => {
-    if (!courseData.title || !courseData.description || !courseData.category) {
-      toast.error("Please fill in all required fields")
+    if (!courseData.title || !courseData.description || !courseData.category || courseData.totalDuration <= 0) {
+      toast.error("Please fill in all required fields including total duration")
       return
     }
 
@@ -185,6 +209,7 @@ export default function CreateCoursePage() {
         description: courseData.description,
         price: courseData.price,
         category: courseData.category,
+        totalDuration: courseData.totalDuration,
         thumbnailUrl: courseData.thumbnailFile?.url || courseData.thumbnailUrl,
         previewVideoUrl: courseData.previewVideo?.url,
         sections: courseData.sections.map(section => ({
@@ -264,7 +289,7 @@ export default function CreateCoursePage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="category">Category *</Label>
                   <Select value={courseData.category} onValueChange={(value) => setCourseData(prev => ({ ...prev, category: value }))}>
@@ -285,10 +310,21 @@ export default function CreateCoursePage() {
                   <Label htmlFor="price">Price (USD) *</Label>
                   <Input
                     id="price"
-                    type="number"
-                    value={courseData.price}
-                    onChange={(e) => setCourseData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                    type="text"
+                    value={courseData.price || ''}
+                    onChange={(e) => handleNumberInput(e.target.value, (value) => setCourseData(prev => ({ ...prev, price: value })))}
                     placeholder="0.00"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="totalDuration">Total Duration (minutes) *</Label>
+                  <Input
+                    id="totalDuration"
+                    type="text"
+                    value={courseData.totalDuration || ''}
+                    onChange={(e) => handleNumberInput(e.target.value, (value) => setCourseData(prev => ({ ...prev, totalDuration: Math.floor(value) })))}
+                    placeholder="0"
                   />
                 </div>
               </div>
@@ -440,7 +476,62 @@ export default function CreateCoursePage() {
                             <div className="space-y-4">
                               <Label>Video Content</Label>
                               <VideoUpload
-                                onVideoChange={(videoData) => updateLesson(sectionIndex, lessonIndex, 'videoFile', videoData)}
+                                onVideoChange={async (videoData) => {
+                                  console.log('Video upload data:', videoData)
+                                  
+                                  // Update video file
+                                  updateLesson(sectionIndex, lessonIndex, 'videoFile', videoData)
+                                  
+                                  // Also update the videoUrl field for proper saving
+                                  if (videoData?.url) {
+                                    console.log('Updating videoUrl to:', videoData.url)
+                                    updateLesson(sectionIndex, lessonIndex, 'videoUrl', videoData.url)
+                                  }
+                                  
+                                  // Extract and update duration automatically
+                                  let duration = 0
+                                  
+                                  if (videoData?.cloudinaryData?.duration) {
+                                    // For uploaded videos, extract duration from Cloudinary data
+                                    duration = Math.round(videoData.cloudinaryData.duration / 60)
+                                    console.log('Extracted duration from Cloudinary:', duration, 'minutes')
+                                  } else if (videoData?.url) {
+                                    // For YouTube URLs, extract video ID and get duration
+                                    const youtubeMatch = videoData.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/)
+                                    if (youtubeMatch) {
+                                      const videoId = youtubeMatch[1]
+                                      console.log('YouTube video ID:', videoId)
+                                      
+                                      try {
+                                        const response = await fetch(`/api/youtube-duration?videoId=${videoId}`)
+                                        const data = await response.json()
+                                        
+                                        if (data.duration) {
+                                          const durationInMinutes = Math.round(data.duration / 60)
+                                          console.log('YouTube duration:', durationInMinutes, 'minutes')
+                                          updateLesson(sectionIndex, lessonIndex, 'duration', durationInMinutes)
+                                        } else {
+                                          console.error('YouTube API error:', data.error)
+                                          toast.error(`YouTube API error: ${data.error || 'Unknown error'}`)
+                                          updateLesson(sectionIndex, lessonIndex, 'duration', 5)
+                                        }
+                                      } catch (error) {
+                                        console.error('Error fetching YouTube duration:', error)
+                                        toast.error('Failed to fetch YouTube video duration')
+                                        updateLesson(sectionIndex, lessonIndex, 'duration', 5)
+                                      }
+                                    } else {
+                                      // For other URLs, set a default duration
+                                      updateLesson(sectionIndex, lessonIndex, 'duration', 5)
+                                    }
+                                  }
+                                  
+                                  // Update duration immediately for uploaded videos
+                                  if (duration > 0) {
+                                    console.log('Updating duration to:', duration, 'minutes')
+                                    updateLesson(sectionIndex, lessonIndex, 'duration', duration)
+                                  }
+                                }}
                                 currentVideo={lesson.videoFile}
                               />
                             </div>
@@ -502,6 +593,12 @@ export default function CreateCoursePage() {
                 <span>Total Lessons:</span>
                 <Badge variant="secondary">
                   {courseData.sections.reduce((total, section) => total + section.lessons.length, 0)}
+                </Badge>
+              </div>
+              <div className="flex justify-between">
+                <span>Total Duration:</span>
+                <Badge variant="secondary">
+                  {courseData.totalDuration > 0 ? `${Math.floor(courseData.totalDuration / 60)}h ${courseData.totalDuration % 60}m` : '0m'}
                 </Badge>
               </div>
               <div className="flex justify-between">
