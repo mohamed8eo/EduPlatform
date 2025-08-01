@@ -1,19 +1,48 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import CourseCard from "@/components/course-card"
+import LoadingSpinner from "@/components/loading-spinner"
 import { ArrowRight, Play, BookOpen, Users, Award, Star, Calendar, TrendingUp } from "lucide-react"
 import { gsap } from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { getRandomCourses, getNew3Courses, get4Mentors } from "@/lib/action/courses"
+import { toast } from "sonner"
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger)
 }
+
+// Interface for course data from database
+interface CourseData {
+  id: string
+  title: string
+  slug: string
+  description: string
+  thumbnail: string | null
+  price: number
+  rating: number | null
+  totalDuration: number
+  studentsCount: number
+  category: {
+    name: string
+  }
+  creator: {
+    firstName: string
+    lastName: string
+    avatar: string | null
+  }
+}
+
+
+
+
+
 
 const featuredCourses = [
   {
@@ -51,77 +80,6 @@ const featuredCourses = [
     rating: 4.7,
     price: 79,
     tags: ["Design", "UI/UX", "Figma"],
-  },
-]
-
-const newCourses = [
-  {
-    id: "7",
-    title: "Advanced React Patterns",
-    description: "Master advanced React patterns and performance optimization techniques.",
-    image: "/placeholder.svg?height=200&width=300",
-    instructor: "Alex Rodriguez",
-    duration: "18 hours",
-    students: 2340,
-    rating: 4.9,
-    price: 129,
-    tags: ["React", "Advanced", "Performance"],
-    isNew: true,
-  },
-  {
-    id: "8",
-    title: "AI & Machine Learning Fundamentals",
-    description: "Get started with artificial intelligence and machine learning concepts.",
-    image: "/placeholder.svg?height=200&width=300",
-    instructor: "Dr. Emma Watson",
-    duration: "32 hours",
-    students: 5670,
-    rating: 4.8,
-    price: 149,
-    tags: ["AI", "Machine Learning", "Python"],
-    isNew: true,
-  },
-  {
-    id: "9",
-    title: "Blockchain Development",
-    description: "Learn to build decentralized applications with blockchain technology.",
-    image: "/placeholder.svg?height=200&width=300",
-    instructor: "James Wilson",
-    duration: "28 hours",
-    students: 1890,
-    rating: 4.7,
-    price: 199,
-    tags: ["Blockchain", "Web3", "Solidity"],
-    isNew: true,
-  },
-]
-
-const chosenCourses = [
-  {
-    id: "4",
-    title: "Digital Marketing Strategy",
-    description: "Learn to create effective digital marketing campaigns and grow your business online.",
-    image: "/placeholder.svg?height=200&width=300",
-    instructor: "Emily Davis",
-    duration: "20 hours",
-    students: 7650,
-    rating: 4.6,
-    price: 69,
-    tags: ["Marketing", "Digital", "Strategy"],
-    reason: "Most Popular This Month",
-  },
-  {
-    id: "5",
-    title: "Mobile App Development with React Native",
-    description: "Build cross-platform mobile apps using React Native and JavaScript.",
-    image: "/placeholder.svg?height=200&width=300",
-    instructor: "David Wilson",
-    duration: "30 hours",
-    students: 9200,
-    rating: 4.7,
-    price: 95,
-    tags: ["Mobile Development", "React Native", "JavaScript"],
-    reason: "Editor's Choice",
   },
 ]
 
@@ -177,56 +135,7 @@ const categories = [
   },
 ]
 
-const mentors = [
-  {
-    id: "1",
-    name: "John Smith",
-    title: "Senior Full Stack Developer",
-    company: "Google",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 4.9,
-    students: 25000,
-    courses: 8,
-    bio: "10+ years of experience building scalable web applications at top tech companies.",
-    expertise: ["JavaScript", "React", "Node.js", "Python"],
-  },
-  {
-    id: "2",
-    name: "Sarah Johnson",
-    title: "Lead Data Scientist",
-    company: "Microsoft",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 4.8,
-    students: 18500,
-    courses: 6,
-    bio: "Expert in machine learning and data analysis with PhD in Computer Science.",
-    expertise: ["Python", "Machine Learning", "Data Analysis", "AI"],
-  },
-  {
-    id: "3",
-    name: "Mike Chen",
-    title: "Principal UX Designer",
-    company: "Apple",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 4.9,
-    students: 22000,
-    courses: 5,
-    bio: "Award-winning designer with 12+ years creating user-centered digital experiences.",
-    expertise: ["UI/UX Design", "Figma", "Design Systems", "User Research"],
-  },
-  {
-    id: "4",
-    name: "Emily Davis",
-    title: "Digital Marketing Director",
-    company: "Meta",
-    image: "/placeholder.svg?height=200&width=200",
-    rating: 4.7,
-    students: 15000,
-    courses: 7,
-    bio: "Marketing strategist who has helped scale startups to billion-dollar companies.",
-    expertise: ["Digital Marketing", "SEO", "Social Media", "Analytics"],
-  },
-]
+
 
 export default function HomePage() {
   const heroRef = useRef<HTMLDivElement>(null)
@@ -237,7 +146,94 @@ export default function HomePage() {
   const categoriesRef = useRef<HTMLDivElement>(null)
   const mentorsRef = useRef<HTMLDivElement>(null)
 
+  // State for chosen courses
+  const [chosenCourses, setChosenCourses] = useState<CourseData[]>([])
+  const [isLoadingChosen, setIsLoadingChosen] = useState(true)
+  
+  // State for new courses
+  const [newCourses, setNewCourses] = useState<CourseData[]>([])
+  const [isLoadingNew, setIsLoadingNew] = useState(true)
+  
+  // State for mentors
+  const [mentors, setMentors] = useState<any[]>([])
+  const [isLoadingMentors, setIsLoadingMentors] = useState(true)
+  
+  // State for counter animation
+  const [counters, setCounters] = useState({
+    courses: 0,
+    students: 0,
+    completion: 0
+  })
+
+  // Fetch random courses for chosen section
   useEffect(() => {
+    const fetchChosenCourses = async () => {
+      try {
+        setIsLoadingChosen(true)
+        const result = await getRandomCourses(2) // Get 2 random courses
+        if (result.success) {
+          setChosenCourses(result?.courses)
+        } else {
+          toast.error("Failed to load recommended courses")
+        }
+      } catch (error) {
+        console.error('Error fetching chosen courses:', error)
+        toast.error("Error loading recommended courses")
+      } finally {
+        setIsLoadingChosen(false)
+      }
+    }
+
+    fetchChosenCourses()
+  }, [])
+
+  // Fetch new courses for What's New section
+  useEffect(() => {
+    const fetchNewCourses = async () => {
+      try {
+        setIsLoadingNew(true)
+        const result = await getNew3Courses()
+        if (result.success) {
+          setNewCourses(result?.courses)
+        } else {
+          toast.error("Failed to load new courses")
+        }
+      } catch (error) {
+        console.error('Error fetching new courses:', error)
+        toast.error("Error loading new courses")
+      } finally {
+        setIsLoadingNew(false)
+      }
+    }
+
+    fetchNewCourses()
+  }, [])
+
+  // Fetch mentors for Meet Our Mentors section
+  useEffect(() => {
+    const fetchMentors = async () => {
+      try {
+        setIsLoadingMentors(true)
+        const result = await get4Mentors()
+        if (result.success) {
+          setMentors(result?.mentors)
+        } else {
+          toast.error("Failed to load mentors")
+        }
+      } catch (error) {
+        console.error('Error fetching mentors:', error)
+        toast.error("Error loading mentors")
+      } finally {
+        setIsLoadingMentors(false)
+      }
+    }
+
+    fetchMentors()
+  }, [])
+
+  useEffect(() => {
+    let statsTrigger: ScrollTrigger | null = null
+    
     const ctx = gsap.context(() => {
       // Hero animations
       const tl = gsap.timeline()
@@ -286,15 +282,6 @@ export default function HomePage() {
               ease: "power2.out",
             })
           },
-          onLeave: () => {
-            gsap.to(items, {
-              opacity: 0,
-              y: -30,
-              duration: 0.5,
-              stagger: 0.05,
-              ease: "power2.in",
-            })
-          },
           onEnterBack: () => {
             gsap.to(items, {
               opacity: 1,
@@ -304,17 +291,6 @@ export default function HomePage() {
               duration: 0.6,
               stagger: 0.1,
               ease: "power2.out",
-            })
-          },
-          onLeaveBack: () => {
-            gsap.to(items, {
-              opacity: 0,
-              y: 50,
-              x: animation.includes("slideLeft") ? -30 : 0,
-              scale: animation.includes("scaleIn") ? 0.95 : 1,
-              duration: 0.5,
-              stagger: 0.05,
-              ease: "power2.in",
             })
           },
         })
@@ -337,14 +313,6 @@ export default function HomePage() {
               ease: "power2.out",
             })
           },
-          onLeave: () => {
-            gsap.to(header, {
-              opacity: 0,
-              y: -20,
-              duration: 0.4,
-              ease: "power2.in",
-            })
-          },
           onEnterBack: () => {
             gsap.to(header, {
               opacity: 1,
@@ -353,19 +321,58 @@ export default function HomePage() {
               ease: "power2.out",
             })
           },
-          onLeaveBack: () => {
-            gsap.to(header, {
-              opacity: 0,
-              y: 30,
-              duration: 0.4,
-              ease: "power2.in",
-            })
-          },
         })
       })
+
+      // Counter animation for stats
+      if (statsRef.current) {
+        statsTrigger = ScrollTrigger.create({
+          trigger: statsRef.current,
+          start: "top 80%",
+          onEnter: () => {
+            // Animate courses counter (500+)
+            gsap.to({}, {
+              duration: 2,
+              onUpdate: function() {
+                const progress = this.progress()
+                const targetValue = 500
+                const currentValue = Math.floor(progress * targetValue)
+                setCounters(prev => ({ ...prev, courses: currentValue }))
+              }
+            })
+
+            // Animate students counter (100K+)
+            gsap.to({}, {
+              duration: 2.5,
+              onUpdate: function() {
+                const progress = this.progress()
+                const targetValue = 100000
+                const currentValue = Math.floor(progress * targetValue)
+                setCounters(prev => ({ ...prev, students: currentValue }))
+              }
+            })
+
+            // Animate completion rate (95%)
+            gsap.to({}, {
+              duration: 1.5,
+              onUpdate: function() {
+                const progress = this.progress()
+                const targetValue = 95
+                const currentValue = Math.floor(progress * targetValue)
+                setCounters(prev => ({ ...prev, completion: currentValue }))
+              }
+            })
+          }
+        })
+      }
     })
 
-    return () => ctx.revert()
+    return () => {
+      ctx.revert()
+      if (statsTrigger) {
+        statsTrigger.kill()
+      }
+    }
   }, [])
 
   return (
@@ -404,21 +411,21 @@ export default function HomePage() {
               <div className="flex justify-center mb-4">
                 <BookOpen className="h-12 w-12 text-primary" />
               </div>
-              <h3 className="text-3xl font-bold mb-2">500+</h3>
+              <h3 className="text-3xl font-bold mb-2">{counters.courses}+</h3>
               <p className="text-muted-foreground">Expert-led Courses</p>
             </div>
             <div className="stat-item">
               <div className="flex justify-center mb-4">
                 <Users className="h-12 w-12 text-primary" />
               </div>
-              <h3 className="text-3xl font-bold mb-2">100K+</h3>
+              <h3 className="text-3xl font-bold mb-2">{counters.students >= 1000 ? `${Math.floor(counters.students / 1000)}K+` : `${counters.students}+`}</h3>
               <p className="text-muted-foreground">Active Students</p>
             </div>
             <div className="stat-item">
               <div className="flex justify-center mb-4">
                 <Award className="h-12 w-12 text-primary" />
               </div>
-              <h3 className="text-3xl font-bold mb-2">95%</h3>
+              <h3 className="text-3xl font-bold mb-2">{counters.completion}%</h3>
               <p className="text-muted-foreground">Completion Rate</p>
             </div>
           </div>
@@ -442,17 +449,34 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-            {newCourses.map((course) => (
-              <div key={course.id} className="new-course-card relative">
-                <div className="absolute top-4 right-4 z-10">
-                  <Badge className="bg-green-500 hover:bg-green-600">
-                    <Calendar className="w-3 h-3 mr-1" />
-                    New
-                  </Badge>
+            {isLoadingNew ? (
+              <LoadingSpinner text="Loading new courses..." className="col-span-full" />
+            ) : (
+              newCourses.map((course) => (
+                <div key={course.id} className="new-course-card relative">
+                  <div className="absolute top-4 right-4 z-10">
+                    <Badge className="bg-green-500 hover:bg-green-600">
+                      <Calendar className="w-3 h-3 mr-1" />
+                      New
+                    </Badge>
+                  </div>
+                  <CourseCard
+                    course={{
+                      id: course.id,
+                      title: course.title,
+                      description: course.description,
+                      image: course.thumbnail || "/placeholder.svg",
+                      instructor: `${course.creator?.firstName} ${course.creator?.lastName}`,
+                      duration: course.totalDuration ? `${Math.floor(course.totalDuration / 60)}h ${course.totalDuration % 60}m` : 'Duration N/A',
+                      students: course.studentsCount || 0,
+                      rating: course.rating || 0,
+                      price: course.price,
+                      tags: [course.category?.name || "Course"]
+                    }}
+                  />
                 </div>
-                <CourseCard course={course} />
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           <div className="text-center">
@@ -482,52 +506,28 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            {chosenCourses.map((course) => (
-              <div key={course.id} className="chosen-course-card">
-                <Card className="overflow-hidden hover:shadow-xl transition-shadow duration-300">
-                  <div className="md:flex">
-                    <div className="md:w-1/2 relative h-64 md:h-auto">
-                      <Image
-                        src={course.image || "/placeholder.svg"}
-                        alt={course.title}
-                        fill
-                        className="object-cover"
-                      />
-                      <div className="absolute top-4 left-4">
-                        <Badge className="bg-primary/90 hover:bg-primary">{course.reason}</Badge>
-                      </div>
-                    </div>
-                    <CardContent className="md:w-1/2 p-6 flex flex-col justify-between">
-                      <div>
-                        <div className="flex flex-wrap gap-2 mb-3">
-                          {course.tags.map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                        <h3 className="text-xl font-semibold mb-3">{course.title}</h3>
-                        <p className="text-muted-foreground mb-4">{course.description}</p>
-                        <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                          <span>by {course.instructor}</span>
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 mr-1 fill-yellow-400 text-yellow-400" />
-                            {course.rating}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-2xl font-bold">${course.price}</span>
-                        <Link href={`/courses/${course.id}`}>
-                          <Button>View Course</Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </div>
-                </Card>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            {isLoadingChosen ? (
+              <LoadingSpinner text="Loading recommended courses..." />
+            ) : (
+              chosenCourses.map((course) => (
+                <CourseCard
+                  key={course.id}
+                  course={{
+                    id: course.id,
+                    title: course.title,
+                    description: course.description,
+                    image: course.thumbnail || "/placeholder.svg",
+                    instructor: `${course.creator?.firstName} ${course.creator?.lastName}`,
+                    duration: course.totalDuration ? `${Math.floor(course.totalDuration / 60)}h ${course.totalDuration % 60}m` : 'Duration N/A',
+                    students: course.studentsCount || 0,
+                    rating: course.rating || 0,
+                    price: course.price,
+                    tags: [course.category?.name || "Course"]
+                  }}
+                />
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -542,40 +542,30 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-4 h-[600px]">
-            {categories.map((category, index) => {
-              const gridClasses = {
-                large: "md:col-span-2 md:row-span-2",
-                medium: "md:col-span-2 md:row-span-1",
-                small: "md:col-span-1 md:row-span-1",
-              }
-
-              return (
-                <Link key={category.name} href="/courses">
-                  <div
-                    className={`category-card group relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl ${gridClasses[category.size]} min-h-[200px]`}
-                  >
-                    <div className="absolute inset-0">
-                      <Image
-                        src={category.image || "/placeholder.svg"}
-                        alt={category.name}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300" />
-                    </div>
-
-                    <div className="relative h-full flex flex-col justify-end p-6 text-white">
-                      <h3 className="text-lg md:text-xl font-bold mb-2 group-hover:text-primary-foreground transition-colors">
-                        {category.name}
-                      </h3>
-                      <p className="text-sm opacity-90 mb-2">{category.description}</p>
-                      <p className="text-xs opacity-75">{category.courses} courses</p>
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categories.map((category, index) => (
+              <Link key={category.name} href="/courses">
+                <div className="category-card group relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl h-[300px]">
+                  <div className="absolute inset-0">
+                    <Image
+                      src={category.image || "/placeholder.svg"}
+                      alt={category.name}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors duration-300" />
                   </div>
-                </Link>
-              )
-            })}
+
+                  <div className="relative h-full flex flex-col justify-end p-6 text-white">
+                    <h3 className="text-lg md:text-xl font-bold mb-2 group-hover:text-primary-foreground transition-colors">
+                      {category.name}
+                    </h3>
+                    <p className="text-sm opacity-90 mb-2">{category.description}</p>
+                    <p className="text-xs opacity-75">{category.courses} courses</p>
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
       </section>
@@ -591,54 +581,58 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {mentors.map((mentor) => (
-              <Card key={mentor.id} className="mentor-card group hover:shadow-xl transition-all duration-300">
-                <CardContent className="p-6 text-center">
-                  <div className="relative mb-4">
-                    <Image
-                      src={mentor.image || "/placeholder.svg"}
-                      alt={mentor.name}
-                      width={120}
-                      height={120}
-                      className="rounded-full mx-auto group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <h3 className="text-lg font-semibold mb-1">{mentor.name}</h3>
-                  <p className="text-sm text-primary font-medium mb-1">{mentor.title}</p>
-                  <p className="text-sm text-muted-foreground mb-4">{mentor.company}</p>
-
-                  <div className="flex justify-center space-x-4 text-xs text-muted-foreground mb-4">
-                    <div className="flex items-center">
-                      <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
-                      {mentor.rating}
+            {isLoadingMentors ? (
+              <LoadingSpinner text="Loading mentors..." className="col-span-full" />
+            ) : (
+              mentors.map((mentor) => (
+                <Card key={mentor.id} className="mentor-card group hover:shadow-xl transition-all duration-300">
+                  <CardContent className="p-6 text-center">
+                    <div className="relative mb-4">
+                      <Image
+                        src={mentor.user?.avatar || "/placeholder.svg"}
+                        alt={`${mentor.user?.firstName} ${mentor.user?.lastName}`}
+                        width={120}
+                        height={120}
+                        className="rounded-full mx-auto group-hover:scale-105 transition-transform duration-300"
+                      />
                     </div>
-                    <div className="flex items-center">
-                      <Users className="h-3 w-3 mr-1" />
-                      {mentor.students.toLocaleString()}
-                    </div>
-                    <div className="flex items-center">
-                      <BookOpen className="h-3 w-3 mr-1" />
-                      {mentor.courses}
-                    </div>
-                  </div>
+                    <h3 className="text-lg font-semibold mb-1">{`${mentor.user?.firstName} ${mentor.user?.lastName}`}</h3>
+                    <p className="text-sm text-primary font-medium mb-1">{mentor.experience}</p>
+                    <p className="text-sm text-muted-foreground mb-4">{mentor.user?.email}</p>
 
-                  <p className="text-xs text-muted-foreground mb-4 line-clamp-3">{mentor.bio}</p>
+                    <div className="flex justify-center space-x-4 text-xs text-muted-foreground mb-4">
+                      <div className="flex items-center">
+                        <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
+                        {mentor.rating || 0}
+                      </div>
+                      <div className="flex items-center">
+                        <Users className="h-3 w-3 mr-1" />
+                        {mentor.totalStudents?.toLocaleString() || 0}
+                      </div>
+                      <div className="flex items-center">
+                        <BookOpen className="h-3 w-3 mr-1" />
+                        {mentor.expertise?.length || 0}
+                      </div>
+                    </div>
 
-                  <div className="flex flex-wrap gap-1 justify-center">
-                    {mentor.expertise.slice(0, 2).map((skill) => (
-                      <Badge key={skill} variant="secondary" className="text-xs">
-                        {skill}
-                      </Badge>
-                    ))}
-                    {mentor.expertise.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
-                        +{mentor.expertise.length - 2}
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <p className="text-xs text-muted-foreground mb-4 line-clamp-3">{mentor.experience}</p>
+
+                    <div className="flex flex-wrap gap-1 justify-center">
+                      {mentor.expertise?.slice(0, 2).map((skill: string) => (
+                        <Badge key={skill} variant="secondary" className="text-xs">
+                          {skill}
+                        </Badge>
+                      ))}
+                      {mentor.expertise && mentor.expertise.length > 2 && (
+                        <Badge variant="outline" className="text-xs">
+                          +{mentor.expertise.length - 2}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            )}
           </div>
 
           <div className="text-center mt-12">
@@ -681,3 +675,4 @@ export default function HomePage() {
     </div>
   )
 }
+

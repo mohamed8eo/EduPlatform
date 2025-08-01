@@ -10,7 +10,8 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { BookOpen, LayoutDashboard, Menu, Bookmark, GraduationCap, Home, Phone, User, Plus } from "lucide-react"
 import { gsap } from "gsap"
 import { useLanguage } from "@/contexts/language-context"
-import { SignInButton, SignUpButton, UserButton } from "@clerk/nextjs"
+import { SignInButton, SignUpButton, UserButton, useUser } from "@clerk/nextjs"
+import { checkUserCreatorStatus } from "@/lib/action/instractor"
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -18,6 +19,7 @@ export default function Navbar() {
   const [isCreator, setIsCreator] = useState(false)
   const pathname = usePathname()
   const { t, isRTL } = useLanguage()
+  const { isSignedIn, user } = useUser()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -33,13 +35,37 @@ export default function Navbar() {
   }, [])
 
   useEffect(() => {
-    const checkCreatorStatus = () => {
-      const userRole = localStorage.getItem("userRole")
-      setIsCreator(userRole === "creator")
+    const checkCreatorStatus = async () => {
+      // Check if user is signed in
+      if (isSignedIn && user) {
+        try {
+          const result = await checkUserCreatorStatus()
+          console.log('Navbar creator status check:', result)
+          if (result.success) {
+            setIsCreator(result.isCreator)
+            console.log('User is creator:', result.isCreator)
+          } else {
+            // Fallback to localStorage check
+            const userRole = localStorage.getItem("userRole")
+            const fallbackIsCreator = userRole === "creator" || user.publicMetadata?.role === "CREATOR"
+            setIsCreator(fallbackIsCreator)
+            console.log('Fallback creator check:', fallbackIsCreator)
+          }
+        } catch (error) {
+          console.error('Error checking creator status:', error)
+          // Fallback to localStorage check
+          const userRole = localStorage.getItem("userRole")
+          const fallbackIsCreator = userRole === "creator" || user.publicMetadata?.role === "CREATOR"
+          setIsCreator(fallbackIsCreator)
+          console.log('Error fallback creator check:', fallbackIsCreator)
+        }
+      } else {
+        setIsCreator(false)
+      }
     }
 
     checkCreatorStatus()
-  }, [])
+  }, [isSignedIn, user])
 
   const navItems = [
     { href: "/", label: t("nav.home"), icon: Home },
@@ -84,7 +110,7 @@ export default function Navbar() {
           <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
             <BookOpen className="h-8 w-8 text-primary" />
             <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
-              
+              EduPlatform
             </span>
           </Link>
 
@@ -131,32 +157,27 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Desktop Auth Buttons (only for non-dashboard) */}
-          {!isDashboard && (
-            <div className={`hidden lg:flex items-center space-x-2 ${isRTL ? "space-x-reverse" : ""}`}>
-              <LanguageToggle />
-              <ModeToggle />
-              <Link href="/sign-in">
-                <Button variant="ghost" size="sm">
-                  {t("Signin")}
-                </Button>
-              </Link>
-              <Link href="/sign-up">
-                <Button size="sm" className="shadow-sm">
-                  {t("Signup")}
-                </Button>
-              </Link>
-            </div>
-          )}
-
-          {/* Dashboard Mode Toggle (desktop) */}
-          {isDashboard && (
-            <div className={`hidden lg:flex items-center space-x-2 ${isRTL ? "space-x-reverse" : ""}`}>
-              <LanguageToggle />
-              <ModeToggle />
-                <UserButton/>
-            </div>
-          )}
+          {/* Desktop Auth Buttons */}
+          <div className={`hidden lg:flex items-center space-x-2 ${isRTL ? "space-x-reverse" : ""}`}>
+            <LanguageToggle />
+            <ModeToggle />
+            {isSignedIn ? (
+              <UserButton />
+            ) : (
+              <>
+                <Link href="/sign-in">
+                  <Button variant="ghost" size="sm">
+                    {t("Signin")}
+                  </Button>
+                </Link>
+                <Link href="/sign-up">
+                  <Button size="sm" className="shadow-sm">
+                    {t("Signup")}
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
 
           {/* Mobile Navigation */}
           <div className={`lg:hidden flex items-center space-x-2 ${isRTL ? "space-x-reverse" : ""}`}>
@@ -249,30 +270,24 @@ export default function Navbar() {
                   </div>
 
                   {/* Footer Actions */}
-                  {!isDashboard && (
-                    <div className="p-4 border-t space-y-2">
-                                              <Link href="/auth/signin" onClick={() => setIsOpen(false)}>
+                  <div className="p-4 border-t space-y-2">
+                    {isSignedIn ? (
+                      <div className="flex justify-center">
+                        <UserButton />
+                      </div>
+                    ) : (
+                      <>
+                        <Link href="/sign-in" onClick={() => setIsOpen(false)}>
                           <Button variant="ghost" className="w-full">
                             {t("nav.signIn")}
                           </Button>
                         </Link>
-                        <Link href="/auth/signup" onClick={() => setIsOpen(false)}>
+                        <Link href="/sign-up" onClick={() => setIsOpen(false)}>
                           <Button className="w-full">{t("nav.signUp")}</Button>
                         </Link>
-                    </div>
-                  )}
-
-                  {isDashboard && (
-                    <div className="p-4 border-t">
-                      <Button
-                        variant="outline"
-                        className={`w-full justify-start bg-transparent ${isRTL ? "flex-row-reverse" : ""}`}
-                      >
-                        <User className={`h-5 w-5 ${isRTL ? "ml-3 mr-0" : "mr-3"}`} />
-                        Profile Settings
-                      </Button>
-                    </div>
-                  )}
+                      </>
+                    )}
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>

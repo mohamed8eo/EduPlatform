@@ -6,6 +6,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -14,6 +15,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator"
 import { Users, DollarSign, BookOpen, Star, TrendingUp, Globe, Award, CheckCircle, Play } from "lucide-react"
 import { gsap } from "gsap"
+import { toast } from "sonner"
+import { createInstructor, checkUserCreatorStatus } from "@/lib/action/instractor"
 
 const creatorStats = [
   { label: "Active Creators", value: "50K+", icon: Users },
@@ -86,40 +89,132 @@ export default function BecomeCreatorPage() {
     twitter: "",
     agreeToTerms: false,
   })
+  const [isCreator, setIsCreator] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [creatorProfile, setCreatorProfile] = useState<any>(null)
 
   useEffect(() => {
-    gsap.fromTo(".hero-content", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" })
-    gsap.fromTo(
-      ".stats-card",
-      { opacity: 0, y: 20 },
-      { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, delay: 0.2, ease: "power2.out" },
-    )
-    gsap.fromTo(
-      ".benefit-card",
-      { opacity: 0, x: -30 },
-      { opacity: 1, x: 0, duration: 0.6, stagger: 0.1, delay: 0.4, ease: "power2.out" },
-    )
+    const checkCreatorStatus = async () => {
+      try {
+        const result = await checkUserCreatorStatus()
+        if (result.success) {
+          setIsCreator(result.isCreator)
+          setCreatorProfile(result.creatorProfile)
+        }
+      } catch (error) {
+        console.error('Error checking creator status:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    checkCreatorStatus()
   }, [])
+
+  useEffect(() => {
+    if (!isLoading) {
+      gsap.fromTo(".hero-content", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" })
+      gsap.fromTo(
+        ".stats-card",
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.6, stagger: 0.1, delay: 0.2, ease: "power2.out" },
+      )
+      gsap.fromTo(
+        ".benefit-card",
+        { opacity: 0, x: -30 },
+        { opacity: 1, x: 0, duration: 0.6, stagger: 0.1, delay: 0.4, ease: "power2.out" },
+      )
+    }
+  }, [isLoading])
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.agreeToTerms) {
-      alert("Please agree to the terms and conditions")
+      toast.error("Please agree to the terms and conditions")
       return
     }
 
-    // Here you would typically send the data to your backend
-    console.log("Creator application submitted:", formData)
+    try {
+      const result = await createInstructor(formData)
+      
+      if (result.success) {
+        toast.success("Application submitted successfully! We'll review it within 24 hours.")
+        router.push("/dashboard")
+      } else {
+        toast.error(result.error || "Failed to submit application")
+      }
+    } catch (error) {
+      console.error('Error submitting application:', error)
+      toast.error("Error submitting application. Please try again.")
+    }
+  }
 
-    // Set creator status in localStorage (replace with actual backend call)
-    localStorage.setItem("userRole", "creator")
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
-    // Redirect to dashboard
-    router.push("/dashboard")
+  // If user is already a creator, show different content
+  if (isCreator) {
+    return (
+      <div className="min-h-screen pt-20">
+        <section className="hero-content bg-gradient-to-br from-primary/10 to-secondary/10 py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div className="mb-8">
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+                You're Already a <span className="text-primary">Creator!</span>
+              </h1>
+              <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+                Welcome back! You're already part of our creator community. Access your dashboard to manage your courses and track your progress.
+              </p>
+            </div>
+
+            {/* Creator Status Info */}
+            <Card className="max-w-2xl mx-auto mb-8">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Creator Status</h3>
+                  <Badge variant={creatorProfile?.isApproved ? "default" : "secondary"}>
+                    {creatorProfile?.isApproved ? "Approved" : "Pending Approval"}
+                  </Badge>
+                </div>
+                {creatorProfile && (
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p><strong>Experience:</strong> {creatorProfile.experience}</p>
+                    <p><strong>Expertise:</strong> {creatorProfile.expertise.join(', ')}</p>
+                    <p><strong>Total Students:</strong> {creatorProfile.totalStudents}</p>
+                    <p><strong>Total Earnings:</strong> ${creatorProfile.totalEarnings}</p>
+                    <p><strong>Rating:</strong> {creatorProfile.rating}/5</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="shadow-lg" onClick={() => router.push('/dashboard')}>
+                <BookOpen className="mr-2 h-5 w-5" />
+                Go to Dashboard
+              </Button>
+              <Button size="lg" variant="outline" className="shadow-lg" onClick={() => router.push('/dashboard/courses')}>
+                <Play className="mr-2 h-5 w-5" />
+                Manage Courses
+              </Button>
+            </div>
+          </div>
+        </section>
+      </div>
+    )
   }
 
   return (

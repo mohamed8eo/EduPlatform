@@ -332,3 +332,145 @@ export const deleteCourse = async (courseId: string) => {
     return { success: false, error: error instanceof Error ? error.message : 'Failed to delete course' }
   }
 }
+
+
+export const getRandomCourses = async (limit: number = 6) => {
+  try {
+    // Get total count of courses
+    const totalCourses = await prisma.course.count()
+    
+    if (totalCourses === 0) {
+      return { success: true, courses: [] }
+    }
+
+    // Generate random skip value to get random courses
+    const skip = Math.floor(Math.random() * Math.max(0, totalCourses - limit))
+    
+    const courses = await prisma.course.findMany({
+      take: limit,
+      skip: skip,
+      include: {
+        category: true,
+        creator: {
+          select: {
+            firstName: true,
+            lastName: true,
+            avatar: true
+          }
+        },
+        sections: {
+          include: {
+            lessons: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    return { success: true, courses }
+  } catch (error) {
+    console.error('Error fetching random courses:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Failed to fetch random courses',
+      courses: []
+    }
+  }
+}
+
+
+
+export const getNew3Courses = async () => { 
+  try {
+    const courses = await prisma.course.findMany({
+      take: 3,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        category: true,
+        creator: {
+          select: {
+            firstName: true,
+            lastName: true,
+            avatar: true
+          }
+        },
+        sections: {
+          include: {
+            lessons: true
+          }
+        }
+      }
+    })
+    return { success: true, courses }
+  } catch (error) {
+    console.error('Error fetching new 3 courses:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch new 3 courses',
+      courses: []
+    }
+  }
+}
+
+
+
+export const getFeaturedCourses = async () => { }
+
+
+
+
+
+
+export const get4Mentors = async () => {
+  try {
+    
+    // First try to get approved mentors
+    let mentors = await prisma.creatorProfile.findMany({
+      where: {
+        isApproved: true
+      },
+      take: 4,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: {
+          select: {
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            email: true
+          }
+        }
+      }
+    })
+    
+    // If no approved mentors, get all creators (for testing)
+    if (mentors.length === 0) {
+      mentors = await prisma.creatorProfile.findMany({
+        take: 4,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+              avatar: true,
+              email: true
+            }
+          }
+        }
+      })
+      console.log('Found all creators:', mentors.length)
+    }
+    
+    return { success: true, mentors }
+  } catch (error) {
+    console.error('Error fetching 4 mentors:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch 4 mentors',
+      mentors: []
+    }
+  }
+}
