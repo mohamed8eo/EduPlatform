@@ -81,7 +81,7 @@ export async function createReview(review: Review) {
 
     const totalReviews = allReviews.length
     const averageRating = totalReviews > 0 
-      ? allReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+      ? allReviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / totalReviews
       : 0
 
     // Update course with new statistics
@@ -285,7 +285,7 @@ export async function deleteReview(reviewId: string) {
 
     const totalReviews = allReviews.length
     const averageRating = totalReviews > 0 
-      ? allReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+      ? allReviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / totalReviews
       : 0
 
     // Get current studentsCount and clamp to zero
@@ -375,7 +375,7 @@ export async function editReview(reviewId: string, review: Review) {
 
     const totalReviews = allReviews.length
     const averageRating = totalReviews > 0 
-      ? allReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+      ? allReviews.reduce((sum: number, review: { rating: number }) => sum + review.rating, 0) / totalReviews
       : 0
 
     // Update course with new statistics
