@@ -379,6 +379,7 @@ export default function CourseDetailPage() {
               avatar: courseResult.course.creator?.avatar || null,
               bio: ''
             },
+            creatorId: courseResult.course.creatorId,
             sections: courseResult.course.sections?.map(section => ({
               id: section.id,
               title: section.title,
@@ -477,6 +478,7 @@ export default function CourseDetailPage() {
               avatar: courseResult.course.creator?.avatar || null,
               bio: ''
             },
+            creatorId: courseResult.course.creatorId,
             sections: courseResult.course.sections?.map(section => ({
               id: section.id,
               title: section.title,

@@ -82,11 +82,11 @@ export default function VideoUpload({ onVideoChange, currentVideo }: VideoUpload
     }
   }
 
-  const getVideoProvider = (url: string) => {
+  const getVideoProvider = (url: string): 'cloudinary' | 'youtube' | 'vimeo' | undefined => {
     if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube'
     if (url.includes('vimeo.com')) return 'vimeo'
     if (url.includes('cloudinary.com')) return 'cloudinary'
-    return 'external'
+    return undefined
   }
 
   const clearVideo = () => {

@@ -32,7 +32,9 @@ export default function ShimmerSkeleton({ className = "", children }: ShimmerSke
       },
     )
 
-    return () => tl.kill()
+    return () => {
+      tl.kill()
+    }
   }, [])
 
   return (

@@ -50,9 +50,9 @@ import { toggleCourseFeature } from '@/lib/action/courses'
 interface Lesson {
   id: string
   title: string
-  description: string
-  content: string
-  videoUrl: string
+  description: string | null
+  content: string | null
+  videoUrl: string | null
   duration: number
   order: number
   type: string
@@ -63,7 +63,7 @@ interface Lesson {
 interface Section {
   id: string
   title: string
-  description: string
+  description: string | null
   order: number
   duration: number
   lessons: Lesson[]
@@ -116,7 +116,59 @@ export default function CourseDetailsPage() {
       try {
         const result = await getCourse(params.courseId as string)
         if (result.success && result.course) {
-          setCourse(result.course as unknown as Course)
+          // Transform the course data to match our interface
+          const transformedCourse: Course = {
+            id: result.course.id,
+            title: result.course.title,
+            slug: result.course.slug,
+            description: result.course.description,
+            longDescription: result.course.description,
+            thumbnail: result.course.thumbnail,
+            previewVideo: result.course.previewVideo,
+            price: result.course.price,
+            level: result.course.level,
+            language: result.course.language,
+            status: result.course.status,
+            tags: result.course.tags || [],
+            requirements: result.course.requirements || [],
+            whatYouWillLearn: result.course.whatYouWillLearn || [],
+            features: [],
+            totalDuration: result.course.totalDuration || 0,
+            totalLessons: result.course.totalLessons || 0,
+            studentsCount: result.course.studentsCount || 0,
+            rating: result.course.rating,
+            reviewsCount: result.course.reviewsCount || 0,
+            createdAt: result.course.createdAt.toISOString(),
+            updatedAt: result.course.updatedAt.toISOString(),
+            hasLifetimeAccess: result.course.hasLifetimeAccess,
+            hasMobileAccess: result.course.hasMobileAccess,
+            hasDownloads: result.course.hasDownloads,
+            hasCertificate: result.course.hasCertificate,
+            hasDiscussions: result.course.hasDiscussions,
+            category: {
+              name: result.course.category?.name || ''
+            },
+            sections: result.course.sections?.map(section => ({
+              id: section.id,
+              title: section.title,
+              description: section.description,
+              order: section.order,
+              duration: section.duration || 0,
+              lessons: section.lessons?.map(lesson => ({
+                id: lesson.id,
+                title: lesson.title,
+                description: lesson.description,
+                content: lesson.content,
+                videoUrl: lesson.videoUrl,
+                duration: lesson.duration || 0,
+                order: lesson.order,
+                type: lesson.type,
+                isPreview: lesson.isPreview,
+                resources: lesson.resources
+              })) || []
+            })) || []
+          }
+          setCourse(transformedCourse)
         } else {
           toast.error("Failed to fetch course")
           router.push('/dashboard/courses')

@@ -243,7 +243,7 @@ export default function HomePage() {
       sections.forEach(({ trigger, elements, animation }) => {
         if (!trigger) return
 
-        const items = gsap.utils.toArray(elements)
+        const items = gsap.utils.toArray(elements) as Element[]
 
         // Set initial state
         gsap.set(items, {
@@ -284,7 +284,7 @@ export default function HomePage() {
       })
 
       // Section headers animation with scroll triggers
-      const headers = gsap.utils.toArray(".section-header")
+      const headers = gsap.utils.toArray(".section-header") as Element[]
       headers.forEach((header) => {
         gsap.set(header, { opacity: 0, y: 30 })
 

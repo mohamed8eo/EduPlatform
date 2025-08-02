@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import cloudinary from '@/lib/cloudinary'
 
+// Define Cloudinary upload result interface
+interface CloudinaryUploadResult {
+  secure_url: string
+  public_id: string
+  format: string
+  bytes: number
+  width?: number
+  height?: number
+  duration?: number
+  resource_type: string
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -48,7 +60,7 @@ export async function POST(request: NextRequest) {
     const folder = isImage ? 'course-thumbnails' : 'course-videos'
 
     // Upload to Cloudinary
-    const result = await new Promise((resolve, reject) => {
+    const result = await new Promise<CloudinaryUploadResult>((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
           resource_type: resourceType,
@@ -60,7 +72,7 @@ export async function POST(request: NextRequest) {
         },
         (error, result) => {
           if (error) reject(error)
-          else resolve(result)
+          else resolve(result as CloudinaryUploadResult)
         }
       ).end(buffer)
     })
