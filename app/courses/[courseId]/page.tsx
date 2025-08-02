@@ -1253,7 +1253,7 @@ export default function CourseDetailPage() {
                                  <AlertDialog>
                                    <AlertDialogTrigger asChild>
                                      <Button
-                                       variant="ghost"
+                                      variant="ghost"
                                        size="sm"
                                        disabled={isSubmitting || deletingReviewId === review.id}
                                        className="text-red-500 hover:text-red-700 hover:bg-red-50"

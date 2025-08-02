@@ -148,7 +148,7 @@ export default function CourseDetailsPage() {
             category: {
               name: result.course.category?.name || ''
             },
-            sections: result.course.sections?.map(section => ({
+            sections: result.course.sections?.map((section: Section) => ({
               id: section.id,
               title: section.title,
               description: section.description,
