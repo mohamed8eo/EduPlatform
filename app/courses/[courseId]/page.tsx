@@ -380,13 +380,13 @@ export default function CourseDetailPage() {
               bio: ''
             },
             creatorId: courseResult.course.creatorId,
-            sections: courseResult.course.sections?.map((section: Section) => ({
+            sections: courseResult.course.sections?.map((section) => ({
               id: section.id,
               title: section.title,
               description: section.description,
               order: section.order,
               duration: section.duration || 0,
-              lessons: section.lessons?.map((lesson: Lesson) => ({
+              lessons: section.lessons?.map((lesson) => ({
                 id: lesson.id,
                 title: lesson.title,
                 description: lesson.description,
@@ -396,7 +396,9 @@ export default function CourseDetailPage() {
                 order: lesson.order,
                 type: lesson.type,
                 isPreview: lesson.isPreview,
-                resources: lesson.resources
+                resources: lesson.resources && typeof lesson.resources === 'object' && lesson.resources !== null
+                  ? lesson.resources as Record<string, unknown>
+                  : {}
               })) || []
             })) || []
           }
@@ -479,13 +481,13 @@ export default function CourseDetailPage() {
               bio: ''
             },
             creatorId: courseResult.course.creatorId,
-            sections: courseResult.course.sections?.map((section: Section) => ({
+            sections: courseResult.course.sections?.map((section) => ({
               id: section.id,
               title: section.title,
               description: section.description,
               order: section.order,
               duration: section.duration || 0,
-              lessons: section.lessons?.map((lesson: Lesson) => ({
+              lessons: section.lessons?.map((lesson) => ({
                 id: lesson.id,
                 title: lesson.title,
                 description: lesson.description,
@@ -495,7 +497,9 @@ export default function CourseDetailPage() {
                 order: lesson.order,
                 type: lesson.type,
                 isPreview: lesson.isPreview,
-                resources: lesson.resources
+                resources: lesson.resources && typeof lesson.resources === 'object' && lesson.resources !== null
+                  ? lesson.resources as Record<string, unknown>
+                  : {}
               })) || []
             })) || []
           }
@@ -585,13 +589,13 @@ export default function CourseDetailPage() {
               bio: ''
             },
             creatorId: courseResult.course.creatorId,
-            sections: courseResult.course.sections?.map((section: Section) => ({
+            sections: courseResult.course.sections?.map((section) => ({
               id: section.id,
               title: section.title,
               description: section.description,
               order: section.order,
               duration: section.duration || 0,
-              lessons: section.lessons?.map((lesson: Lesson) => ({
+              lessons: section.lessons?.map((lesson) => ({
                 id: lesson.id,
                 title: lesson.title,
                 description: lesson.description,
@@ -601,7 +605,9 @@ export default function CourseDetailPage() {
                 order: lesson.order,
                 type: lesson.type,
                 isPreview: lesson.isPreview,
-                resources: lesson.resources
+                resources: lesson.resources && typeof lesson.resources === 'object' && lesson.resources !== null
+                  ? lesson.resources as Record<string, unknown>
+                  : {}
               })) || []
             })) || []
           }
