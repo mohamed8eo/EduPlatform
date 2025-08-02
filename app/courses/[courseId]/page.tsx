@@ -940,7 +940,7 @@ export default function CourseDetailPage() {
               <Tabs defaultValue="overview" className="w-full">
                 <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="overview">{t("course.overview")}</TabsTrigger>
-                  <TabsTrigger value="curriculum">{t("course.curriculum")}</TabsTrigger>
+                  <TabsTrigger value="curriculum">{t("curriculum")}</TabsTrigger>
                   <TabsTrigger value="instructor">{t("course.instructor")}</TabsTrigger>
                   <TabsTrigger value="reviews">Reviews</TabsTrigger>
                 </TabsList>
@@ -981,63 +981,63 @@ export default function CourseDetailPage() {
 
                   <div className="space-y-4">
                     {course.sections?.map((section, index) => (
-                      <Card key={section.id} className="syllabus-item bg-white border border-gray-200 shadow-sm">
+                      <Card key={section.id} className="syllabus-item bg-card border border-border shadow-sm">
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
                             <div className={`flex items-center space-x-3 ${isRTL ? "space-x-reverse" : ""}`}>
-                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 border border-blue-300 text-blue-600 font-semibold text-sm">
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 border border-primary/20 text-primary font-semibold text-sm">
                                 {index + 1}
                               </div>
                               <div>
-                                <CardTitle className="text-lg text-gray-900">{section.title}</CardTitle>
-                                <p className="text-sm text-gray-600">{section.description}</p>
+                                <CardTitle className="text-lg text-foreground">{section.title}</CardTitle>
+                                <p className="text-sm text-muted-foreground">{section.description}</p>
                               </div>
                             </div>
                             <div
-                              className={`flex items-center space-x-4 text-sm text-gray-500 ${isRTL ? "space-x-reverse" : ""}`}
+                              className={`flex items-center space-x-4 text-sm text-muted-foreground ${isRTL ? "space-x-reverse" : ""}`}
                             >
                               <span>{section.lessons.length} lessons</span>
                               <span>{formatDuration(section.lessons.reduce((total, lesson) => total + (lesson.duration || 0), 0))}</span>
-                              <Play className="h-5 w-5 text-gray-400" />
+                              <Play className="h-5 w-5 text-muted-foreground" />
                             </div>
                           </div>
                         </CardHeader>
                         
                         <Accordion type="single" collapsible className="w-full">
                           <AccordionItem value={`section-${section.id}`} className="border-none">
-                            <AccordionTrigger className="px-6 py-2 hover:bg-gray-50 rounded-lg mx-4 mb-2 text-gray-700">
-                              <span className="text-sm">View Lessons</span>
+                            <AccordionTrigger className="px-6 py-2 hover:bg-accent/50 rounded-lg mx-4 mb-2 text-foreground transition-colors">
+                              <span className="text-sm font-medium">View Lessons</span>
                             </AccordionTrigger>
                             <AccordionContent className="px-6 pb-4">
                               <div className="space-y-3">
                                 {section.lessons?.map((lesson, lessonIndex) => (
-                                  <div key={lesson.id} className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
+                                  <div key={lesson.id} className="flex items-center justify-between py-3 px-4 bg-card rounded-lg border border-border/50 hover:bg-accent/30 transition-colors">
                                     <div className="flex items-center space-x-3">
                                       <div 
-                                        className={`w-8 h-8 rounded-full bg-white flex items-center justify-center border border-gray-300 shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 ${
-                                          lesson.type === 'VIDEO' ? 'hover:bg-blue-50 hover:border-blue-400' : 
-                                          lesson.type === 'QUIZ' ? 'hover:bg-yellow-50 hover:border-yellow-400' :
-                                          lesson.type === 'ASSIGNMENT' ? 'hover:bg-purple-50 hover:border-purple-400' :
-                                          lesson.type === 'TEXT' ? 'hover:bg-green-50 hover:border-green-400' : 'hover:bg-blue-50 hover:border-blue-400'
+                                        className={`w-8 h-8 rounded-full bg-background flex items-center justify-center border border-border shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 ${
+                                          lesson.type === 'VIDEO' ? 'hover:bg-primary/10 hover:border-primary/30' : 
+                                          lesson.type === 'QUIZ' ? 'hover:bg-yellow-500/10 hover:border-yellow-500/30' :
+                                          lesson.type === 'ASSIGNMENT' ? 'hover:bg-purple-500/10 hover:border-purple-500/30' :
+                                          lesson.type === 'TEXT' ? 'hover:bg-green-500/10 hover:border-green-500/30' : 'hover:bg-primary/10 hover:border-primary/30'
                                         }`}
                                         onClick={() => lesson.isPreview && handlePreviewLesson(lesson)}
                                         title={lesson.isPreview ? "Click to preview" : "Preview not available"}
                                       >
                                         {lesson.type === 'VIDEO' ? (
-                                          <Play className={`h-4 w-4 ${lesson.isPreview ? 'text-blue-600' : 'text-gray-400'}`} />
+                                          <Play className={`h-4 w-4 ${lesson.isPreview ? 'text-primary' : 'text-muted-foreground'}`} />
                                         ) : lesson.type === 'QUIZ' ? (
-                                          <HelpCircle className={`h-4 w-4 ${lesson.isPreview ? 'text-yellow-600' : 'text-gray-400'}`} />
+                                          <HelpCircle className={`h-4 w-4 ${lesson.isPreview ? 'text-yellow-500' : 'text-muted-foreground'}`} />
                                         ) : lesson.type === 'ASSIGNMENT' ? (
-                                          <ClipboardList className={`h-4 w-4 ${lesson.isPreview ? 'text-purple-600' : 'text-gray-400'}`} />
+                                          <ClipboardList className={`h-4 w-4 ${lesson.isPreview ? 'text-purple-500' : 'text-muted-foreground'}`} />
                                         ) : lesson.type === 'TEXT' ? (
-                                          <BookOpen className={`h-4 w-4 ${lesson.isPreview ? 'text-green-600' : 'text-gray-400'}`} />
+                                          <BookOpen className={`h-4 w-4 ${lesson.isPreview ? 'text-green-500' : 'text-muted-foreground'}`} />
                                         ) : (
-                                          <Play className={`h-4 w-4 ${lesson.isPreview ? 'text-blue-600' : 'text-gray-400'}`} />
+                                          <Play className={`h-4 w-4 ${lesson.isPreview ? 'text-primary' : 'text-muted-foreground'}`} />
                                         )}
                                       </div>
                                       <div>
-                                        <p className="text-sm font-medium text-gray-900">{lesson.title}</p>
-                                        <p className="text-xs text-gray-600">{lesson.description}</p>
+                                        <p className="text-sm font-medium text-foreground">{lesson.title}</p>
+                                        <p className="text-xs text-muted-foreground">{lesson.description}</p>
                                       </div>
                                     </div>
                                     <div className="flex items-center space-x-2">
@@ -1045,7 +1045,7 @@ export default function CourseDetailPage() {
                                         <Button
                                           variant="outline"
                                           size="sm"
-                                          className="text-xs bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors"
+                                          className="text-xs bg-primary/10 border-primary/20 text-primary hover:bg-primary/20 transition-colors"
                                           onClick={() => handlePreviewLesson(lesson)}
                                         >
                                           Preview
@@ -1054,13 +1054,13 @@ export default function CourseDetailPage() {
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        className="text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                                        className="text-xs text-muted-foreground hover:text-foreground hover:bg-accent"
                                         onClick={() => handleShareLesson(lesson)}
                                         title="Share lesson"
                                       >
                                         <Share2 className="h-3 w-3" />
                                       </Button>
-                                      <span className="text-xs text-gray-500">
+                                      <span className="text-xs text-muted-foreground">
                                         {formatDuration(lesson.duration)}
                                       </span>
                                     </div>
@@ -1073,9 +1073,9 @@ export default function CourseDetailPage() {
 
                         {index === 0 && (
                           <CardContent className="pt-0">
-                            <div className="bg-blue-50 rounded-lg p-3 mx-4 mb-4 border border-blue-200">
-                              <p className="text-xs text-blue-600 mb-1">Current Lesson:</p>
-                              <p className="text-sm font-medium text-gray-900">{section.lessons[0]?.title || "Introduction to the Course"}</p>
+                            <div className="bg-primary/5 rounded-lg p-3 mx-4 mb-4 border border-primary/10">
+                              <p className="text-xs text-primary mb-1 font-medium">Current Lesson:</p>
+                              <p className="text-sm font-medium text-foreground">{section.lessons[0]?.title || "Introduction to the Course"}</p>
                             </div>
                           </CardContent>
                         )}

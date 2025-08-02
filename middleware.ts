@@ -1,27 +1,27 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/become-creator(.*)']);
-const isPublicRoute = createRouteMatcher([
-  '/api/webhooks(.*)',
-  '/api/trpc(.*)',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/webhooks(.*)',
-  '/api/trpc(.*)',
-  '/api/webhooks(.*)',
-  '/api/trpc(.*)',
-  '/api/webhooks(.*)',
-  '/api/trpc(.*)',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-  '/api/webhooks(.*)',
-  '/api/trpc(.*)',
-  '/sign-in(.*)',
-  '/sign-up(.*)',
-]);
+const isProtectedRoute = createRouteMatcher(['/dashboard(.*)', '/become-creator(.*)', '/api/webhooks(.*)', '/courses(.*)']);
+// const isPublicRoute = createRouteMatcher([
+//   '/api/webhooks(.*)',
+//   '/api/trpc(.*)',
+//   '/sign-in(.*)',
+//   '/sign-up(.*)',
+//   '/api/webhooks(.*)',
+//   '/api/trpc(.*)',
+//   '/api/webhooks(.*)',
+//   '/api/trpc(.*)',
+//   '/api/webhooks(.*)',
+//   '/api/trpc(.*)',
+//   '/sign-in(.*)',
+//   '/sign-up(.*)',
+//   '/api/webhooks(.*)',
+//   '/api/trpc(.*)',
+//   '/sign-in(.*)',
+//   '/sign-up(.*)',
+// ]);
 
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req) && !isPublicRoute(req)) {
+  if (isProtectedRoute(req)) {
     await auth.protect();
   }
 });
