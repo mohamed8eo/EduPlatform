@@ -68,7 +68,7 @@ interface Lesson {
   order: number
   type: string
   isPreview: boolean
-  resources: any
+  resources: Record<string, unknown>
 }
 
 interface Section {
@@ -193,13 +193,13 @@ export default function CourseDetailPage() {
               bio: `${result.course.creator.firstName} ${result.course.creator.lastName} is an expert instructor with years of experience in this field.`
             },
             creatorId: result.course.creatorId,
-            sections: result.course.sections.map((section: Section) => ({
+            sections: result.course.sections.map((section: any) => ({
               id: section.id,
               title: section.title,
               description: section.description,
               order: section.order,
               duration: section.duration || 0,
-              lessons: section.lessons.map((lesson: Lesson) => ({
+              lessons: section.lessons.map((lesson: any) => ({
                 id: lesson.id,
                 title: lesson.title,
                 description: lesson.description,
@@ -624,10 +624,10 @@ export default function CourseDetailPage() {
     }
   }
 
-  const startEditing = (review: any) => {
-    setEditingReviewId(review.id)
-    setEditComment(review.comment)
-    setEditRating(review.rating)
+  const startEditing = (review: Record<string, unknown>) => {
+    setEditingReviewId(review.id as string)
+    setEditComment(review.comment as string)
+    setEditRating(review.rating as number)
   }
 
   const cancelEditing = () => {
@@ -755,7 +755,7 @@ export default function CourseDetailPage() {
       <div className="min-h-screen pt-20 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Course Not Found</h1>
-          <p className="text-muted-foreground mb-6">The course you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-6">The course you&apos;re looking for doesn&apos;t exist.</p>
           <Link href="/courses">
             <Button>Browse All Courses</Button>
           </Link>
@@ -1275,7 +1275,7 @@ export default function CourseDetailPage() {
                                      <AlertDialogFooter>
                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                                        <AlertDialogAction
-                                         onClick={() => handleDeleteReview(review.id)}
+                                         onClick={() => handleDeleteReview(review.id as string)}
                                          disabled={isSubmitting || deletingReviewId === review.id}
                                          className="bg-red-500 hover:bg-red-600"
                                        >
@@ -1318,7 +1318,7 @@ export default function CourseDetailPage() {
                                <div className="flex space-x-2">
                                  <Button
                                    size="sm"
-                                   onClick={() => handleEditReview(review.id)}
+                                   onClick={() => handleEditReview(review.id as string)}
                                    disabled={!editComment.trim() || editRating === 0 || isSubmitting}
                                  >
                                    {isSubmitting ? "Updating..." : "Update Review"}

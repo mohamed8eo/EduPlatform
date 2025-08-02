@@ -310,10 +310,10 @@ export const getInstructorStats = async (instructorId: string) => {
 
     // Calculate instructor statistics
     const totalCourses = instructorCourses.length
-    const totalStudents = instructorCourses.reduce((sum: number, course) => sum + (course.studentsCount || 0), 0)
+    const totalStudents = instructorCourses.reduce((sum: number, course: { studentsCount: number | null }) => sum + (course.studentsCount || 0), 0)
     
     // Calculate average rating from all courses
-    const coursesWithRatings = instructorCourses.filter(course => course.rating && course.rating > 0)
+    const coursesWithRatings = instructorCourses.filter((course: { rating: number | null }) => course.rating && course.rating > 0)
     const averageRating = coursesWithRatings.length > 0 
       ? coursesWithRatings.reduce((sum: number, course) => sum + (course.rating || 0), 0) / coursesWithRatings.length
       : 0
