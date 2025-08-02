@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Play, Pause, Volume2, VolumeX, Maximize, X, Settings, Share2, Clock } from "lucide-react"
+import { Play, Pause, Volume2, VolumeX, Maximize, X, Settings, Share2, Clock, Eye } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 
@@ -12,9 +12,10 @@ interface VideoPlayerProps {
   videoType?: 'cloudinary' | 'youtube' | 'vimeo' | 'external'
   onClose?: () => void
   title?: string
+  isPreview?: boolean
 }
 
-export default function VideoPlayer({ videoUrl, videoType = 'external', onClose, title }: VideoPlayerProps) {
+export default function VideoPlayer({ videoUrl, videoType = 'external', onClose, title, isPreview = false }: VideoPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
@@ -169,53 +170,63 @@ export default function VideoPlayer({ videoUrl, videoType = 'external', onClose,
   if (videoType === 'youtube') {
     const embedUrl = getVideoSource()
     return (
-      <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="w-full max-w-4xl relative">
-          {/* Professional Header */}
-          <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-t-xl p-4 border-b border-gray-700">
+      <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center z-50 p-4">
+        <div className="w-full max-w-5xl relative">
+          {/* Enhanced Header */}
+          <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-t-2xl p-6 border-b border-slate-700 shadow-xl">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center">
-                  <Play className="h-4 w-4 text-white" />
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 via-red-600 to-red-700 rounded-xl flex items-center justify-center shadow-lg">
+                  <Play className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-white font-semibold text-base">{title || 'Video Player'}</h3>
-                  <p className="text-gray-300 text-xs">YouTube Video</p>
+                  <h3 className="text-white font-bold text-lg">{title || 'Video Player'}</h3>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Badge variant="secondary" className="bg-red-500/20 text-red-300 border-red-500/30 text-xs">
+                      YouTube
+                    </Badge>
+                    {isPreview && (
+                      <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
+                        <Eye className="h-3 w-3 mr-1" />
+                        Preview
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={handleShare}
-                  className="text-gray-300 hover:text-white hover:bg-gray-700 text-xs"
+                  className="text-slate-300 hover:text-white hover:bg-slate-700/50 text-sm transition-colors"
                 >
-                  <Share2 className="h-3 w-3 mr-1" />
+                  <Share2 className="h-4 w-4 mr-2" />
                   Share
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={handleWatchLater}
-                  className="text-gray-300 hover:text-white hover:bg-gray-700 text-xs"
+                  className="text-slate-300 hover:text-white hover:bg-slate-700/50 text-sm transition-colors"
                 >
-                  <Clock className="h-3 w-3 mr-1" />
+                  <Clock className="h-4 w-4 mr-2" />
                   Watch Later
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="sm" 
                   onClick={onClose}
-                  className="text-gray-300 hover:text-white hover:bg-gray-700"
+                  className="text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-5 w-5" />
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Video Container */}
-          <div className="relative bg-black rounded-b-xl overflow-hidden shadow-2xl">
+          {/* Enhanced Video Container */}
+          <div className="relative bg-black rounded-b-2xl overflow-hidden shadow-2xl">
             <div className="aspect-video">
               <iframe
                 src={embedUrl}
@@ -225,11 +236,16 @@ export default function VideoPlayer({ videoUrl, videoType = 'external', onClose,
               />
             </div>
             
-            {/* YouTube Branding */}
-            <div className="absolute top-2 right-2">
-              <Badge variant="secondary" className="bg-black/80 text-white border-gray-600 text-xs">
-                YouTube
-              </Badge>
+            {/* Enhanced Branding */}
+            <div className="absolute top-4 right-4">
+              <div className="flex items-center space-x-2">
+                <Badge variant="secondary" className="bg-black/90 text-white border-slate-600 text-xs backdrop-blur-sm">
+                  HD
+                </Badge>
+                <Badge variant="secondary" className="bg-red-500/90 text-white border-red-600 text-xs backdrop-blur-sm">
+                  YouTube
+                </Badge>
+              </div>
             </div>
           </div>
         </div>
@@ -238,55 +254,65 @@ export default function VideoPlayer({ videoUrl, videoType = 'external', onClose,
   }
 
   return (
-    <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-4xl relative">
-        {/* Professional Header */}
-        <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-t-xl p-4 border-b border-gray-700">
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-md flex items-center justify-center z-50 p-4">
+      <div className="w-full max-w-5xl relative">
+        {/* Enhanced Header */}
+        <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 rounded-t-2xl p-6 border-b border-slate-700 shadow-xl">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <Play className="h-4 w-4 text-white" />
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+                <Play className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h3 className="text-white font-semibold text-base">{title || 'Video Player'}</h3>
-                <p className="text-gray-300 text-xs">Custom Video Player</p>
+                <h3 className="text-white font-bold text-lg">{title || 'Video Player'}</h3>
+                <div className="flex items-center space-x-2 mt-1">
+                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-300 border-blue-500/30 text-xs">
+                    Custom Player
+                  </Badge>
+                  {isPreview && (
+                    <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30 text-xs">
+                      <Eye className="h-3 w-3 mr-1" />
+                      Preview
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleShare}
-                className="text-gray-300 hover:text-white hover:bg-gray-700 text-xs"
+                className="text-slate-300 hover:text-white hover:bg-slate-700/50 text-sm transition-colors"
               >
-                <Share2 className="h-3 w-3 mr-1" />
+                <Share2 className="h-4 w-4 mr-2" />
                 Share
               </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleWatchLater}
-                className="text-gray-300 hover:text-white hover:bg-gray-700 text-xs"
+                className="text-slate-300 hover:text-white hover:bg-slate-700/50 text-sm transition-colors"
               >
-                <Clock className="h-3 w-3 mr-1" />
+                <Clock className="h-4 w-4 mr-2" />
                 Watch Later
               </Button>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={onClose}
-                className="text-gray-300 hover:text-white hover:bg-gray-700"
+                className="text-slate-300 hover:text-white hover:bg-slate-700/50 transition-colors"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </Button>
             </div>
           </div>
         </div>
 
-        {/* Video Container */}
+        {/* Enhanced Video Container */}
         <div 
           ref={containerRef} 
-          className="relative bg-black rounded-b-xl overflow-hidden shadow-2xl"
+          className="relative bg-black rounded-b-2xl overflow-hidden shadow-2xl"
           onMouseMove={handleMouseMove}
           onMouseLeave={() => setShowControls(false)}
         >
@@ -297,71 +323,79 @@ export default function VideoPlayer({ videoUrl, videoType = 'external', onClose,
             controls={false}
           />
           
-          {/* Professional Controls Overlay */}
-          <div className={`absolute inset-0 transition-opacity duration-300 ${
+          {/* Enhanced Controls Overlay */}
+          <div className={`absolute inset-0 transition-all duration-300 ${
             showControls ? 'opacity-100' : 'opacity-0'
           }`}>
             {/* Top Controls */}
-            <div className="absolute top-2 left-2 right-2 flex items-center justify-between">
-              <Badge variant="secondary" className="bg-black/80 text-white border-gray-600 text-xs">
-                HD
-              </Badge>
+            <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20">
-                  <Settings className="h-3 w-3" />
+                <Badge variant="secondary" className="bg-black/90 text-white border-slate-600 text-xs backdrop-blur-sm">
+                  HD
+                </Badge>
+                {isPreview && (
+                  <Badge variant="secondary" className="bg-green-500/90 text-white border-green-600 text-xs backdrop-blur-sm">
+                    <Eye className="h-3 w-3 mr-1" />
+                    Preview
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" size="sm" className="text-white hover:bg-white/20 backdrop-blur-sm">
+                  <Settings className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Center Play Button */}
+            {/* Enhanced Center Play Button */}
             <div className="absolute inset-0 flex items-center justify-center">
               <Button
                 variant="ghost"
                 size="lg"
                 onClick={togglePlay}
-                className="w-12 h-12 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-sm"
+                className="w-16 h-16 bg-white/20 hover:bg-white/30 text-white rounded-full backdrop-blur-md border border-white/20 transition-all duration-200 hover:scale-110"
               >
-                {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6 ml-0.5" />}
+                {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8 ml-1" />}
               </Button>
             </div>
 
-            {/* Bottom Controls */}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent p-4">
-              {/* Progress Bar */}
-              <div className="mb-3">
+            {/* Enhanced Bottom Controls */}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/95 via-black/70 to-transparent p-6">
+              {/* Enhanced Progress Bar */}
+              <div className="mb-4">
                 <input
                   type="range"
                   min="0"
                   max={duration}
                   value={currentTime}
                   onChange={handleSeek}
-                  className="w-full h-1.5 bg-white/30 rounded-lg appearance-none cursor-pointer slider"
+                  className="w-full h-2 bg-white/30 rounded-full appearance-none cursor-pointer slider"
                   style={{
                     background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(currentTime / duration) * 100}%, rgba(255, 255, 255, 0.3) ${(currentTime / duration) * 100}%, rgba(255, 255, 255, 0.3) 100%)`
                   }}
                 />
               </div>
 
-              {/* Control Buttons */}
+              {/* Enhanced Control Buttons */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-4">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={togglePlay}
-                    className="text-white hover:bg-white/20"
+                    className="text-white hover:bg-white/20 backdrop-blur-sm"
                   >
-                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
                   </Button>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={toggleMute}
-                      className="text-white hover:bg-white/20"
+                      className="text-white hover:bg-white/20 backdrop-blur-sm"
                     >
-                      {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
+                      {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
                     </Button>
                     <input
                       type="range"
@@ -370,11 +404,11 @@ export default function VideoPlayer({ videoUrl, videoType = 'external', onClose,
                       step="0.1"
                       value={volume}
                       onChange={handleVolumeChange}
-                      className="w-16 h-1 bg-white/30 rounded-lg appearance-none cursor-pointer"
+                      className="w-20 h-1.5 bg-white/30 rounded-full appearance-none cursor-pointer"
                     />
                   </div>
                   
-                  <span className="text-white text-xs font-mono">
+                  <span className="text-white text-sm font-mono bg-black/50 px-2 py-1 rounded backdrop-blur-sm">
                     {formatTime(currentTime)} / {formatTime(duration)}
                   </span>
                 </div>
@@ -383,9 +417,9 @@ export default function VideoPlayer({ videoUrl, videoType = 'external', onClose,
                   variant="ghost"
                   size="sm"
                   onClick={toggleFullscreen}
-                  className="text-white hover:bg-white/20"
+                  className="text-white hover:bg-white/20 backdrop-blur-sm"
                 >
-                  <Maximize className="h-4 w-4" />
+                  <Maximize className="h-5 w-5" />
                 </Button>
               </div>
             </div>
@@ -396,22 +430,23 @@ export default function VideoPlayer({ videoUrl, videoType = 'external', onClose,
       <style jsx>{`
         .slider::-webkit-slider-thumb {
           appearance: none;
-          height: 12px;
-          width: 12px;
+          height: 16px;
+          width: 16px;
           border-radius: 50%;
           background: #3b82f6;
           cursor: pointer;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+          border: 2px solid white;
         }
         
         .slider::-moz-range-thumb {
-          height: 12px;
-          width: 12px;
+          height: 16px;
+          width: 16px;
           border-radius: 50%;
           background: #3b82f6;
           cursor: pointer;
-          border: none;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          border: 2px solid white;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
       `}</style>
     </div>

@@ -51,6 +51,20 @@ export default function RootLayout({
           footerActionLink: "text-primary hover:text-primary/80",
           dividerLine: "bg-border",
           dividerText: "text-muted-foreground",
+          // User dropdown styling
+          userButtonBox: "bg-background rounded-md shadow-sm hover:shadow-md transition-shadow",
+          userButtonTrigger: "hover:bg-accent focus:bg-accent transition-colors",
+          userButtonPopoverCard: "bg-card shadow-lg rounded-lg border border-border/50",
+          userButtonPopoverActionButton: "text-foreground hover:bg-accent hover:text-accent-foreground transition-colors",
+          userButtonPopoverActionButtonText: "text-foreground",
+          userButtonPopoverActionButtonIcon: "text-muted-foreground",
+          userButtonPopoverFooter: "bg-muted/30",
+          userButtonPopoverFooterAction: "text-muted-foreground hover:text-foreground transition-colors",
+          userButtonPopoverUserPreview: "text-foreground",
+          userButtonPopoverUserPreviewTextContainer: "text-foreground",
+          userButtonPopoverUserPreviewMainIdentifier: "text-foreground font-medium",
+          userButtonPopoverUserPreviewSecondaryIdentifier: "text-muted-foreground",
+          userButtonPopoverUserPreviewImage: "rounded-full ring-2 ring-primary/20",
         },
       }}
     >
@@ -64,7 +78,7 @@ export default function RootLayout({
                 <Toaster />
                 <Footer />
               </div>
-            </LanguageProvider>
+            </LanguageProvider>``
           </ThemeProvider>
         </body>
       </html>

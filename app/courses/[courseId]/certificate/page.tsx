@@ -5,6 +5,7 @@ import { useParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Award, Download, Share2, Calendar, CheckCircle } from "lucide-react"
+import { toast } from "sonner"
 import { gsap } from "gsap"
 
 export default function CertificatePage() {
@@ -50,13 +51,32 @@ export default function CertificatePage() {
     // Here you would trigger the actual download
   }
 
-  const handleShare = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: `${certificateData.studentName}'s Certificate`,
-        text: `I just completed ${certificateData.courseName}!`,
-        url: window.location.href,
-      })
+  const handleShare = async () => {
+    const shareData = {
+      title: `${certificateData.studentName}'s Certificate`,
+      text: `I just completed ${certificateData.courseName}!`,
+      url: window.location.href,
+    }
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData)
+        toast.success('Certificate shared successfully!')
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(window.location.href)
+        toast.success('Certificate URL copied to clipboard!')
+      }
+    } catch (error) {
+      console.error('Error sharing certificate:', error)
+      // Fallback to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href)
+        toast.success('Certificate URL copied to clipboard!')
+      } catch (clipboardError) {
+        console.error('Clipboard error:', clipboardError)
+        toast.error('Failed to share certificate')
+      }
     }
   }
 

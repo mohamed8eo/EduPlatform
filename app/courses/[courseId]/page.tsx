@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +48,7 @@ import {
   User,
   Trash2,
   Edit,
+  X,
 } from "lucide-react"
 import { gsap } from "gsap"
 import { useLanguage } from "@/contexts/language-context"
@@ -137,6 +139,8 @@ export default function CourseDetailPage() {
   const [editRating, setEditRating] = useState(0)
   const [editHoveredRating, setEditHoveredRating] = useState(0)
   const [showVideoPlayer, setShowVideoPlayer] = useState(false)
+  const [previewLesson, setPreviewLesson] = useState<Lesson | null>(null)
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false)
   const [instructorStats, setInstructorStats] = useState<{
     totalCourses: number
     totalStudents: number
@@ -638,6 +642,74 @@ export default function CourseDetailPage() {
     }
   }
 
+  const handlePreviewLesson = (lesson: Lesson) => {
+    setPreviewLesson(lesson)
+    setShowPreviewDialog(true)
+  }
+
+  const closePreviewDialog = () => {
+    setShowPreviewDialog(false)
+    setPreviewLesson(null)
+  }
+
+  const handleShareCourse = async () => {
+    const shareData = {
+      title: course?.title || 'Course',
+      text: course?.description || 'Check out this amazing course!',
+      url: window.location.href,
+    }
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData)
+        toast.success('Course shared successfully!')
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(window.location.href)
+        toast.success('Course URL copied to clipboard!')
+      }
+    } catch (error) {
+      console.error('Error sharing:', error)
+      // Fallback to clipboard
+      try {
+        await navigator.clipboard.writeText(window.location.href)
+        toast.success('Course URL copied to clipboard!')
+      } catch (clipboardError) {
+        console.error('Clipboard error:', clipboardError)
+        toast.error('Failed to share course')
+      }
+    }
+  }
+
+  const handleShareLesson = async (lesson: Lesson) => {
+    const shareData = {
+      title: `${lesson.title} - ${course?.title}`,
+      text: lesson.description || 'Check out this lesson!',
+      url: `${window.location.href}#lesson-${lesson.id}`,
+    }
+
+    try {
+      if (navigator.share && navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData)
+        toast.success('Lesson shared successfully!')
+      } else {
+        // Fallback to clipboard
+        await navigator.clipboard.writeText(`${window.location.href}#lesson-${lesson.id}`)
+        toast.success('Lesson URL copied to clipboard!')
+      }
+    } catch (error) {
+      console.error('Error sharing lesson:', error)
+      // Fallback to clipboard
+      try {
+        await navigator.clipboard.writeText(`${window.location.href}#lesson-${lesson.id}`)
+        toast.success('Lesson URL copied to clipboard!')
+      } catch (clipboardError) {
+        console.error('Clipboard error:', clipboardError)
+        toast.error('Failed to share lesson')
+      }
+    }
+  }
+
   const getVideoType = (url: string) => {
     if (url.includes('youtube.com') || url.includes('youtu.be')) {
       return 'youtube'
@@ -830,7 +902,12 @@ export default function CourseDetailPage() {
                   <Separator className="my-4" />
 
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1 bg-transparent hover:bg-accent"
+                      onClick={handleShareCourse}
+                    >
                       <Share2 className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
                       {t("common.share")}
                     </Button>
@@ -926,19 +1003,28 @@ export default function CourseDetailPage() {
                             <AccordionContent className="px-6 pb-4">
                               <div className="space-y-3">
                                 {section.lessons?.map((lesson, lessonIndex) => (
-                                  <div key={lesson.id} className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg border border-gray-200">
+                                  <div key={lesson.id} className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg border border-gray-200 hover:bg-gray-100 transition-colors">
                                     <div className="flex items-center space-x-3">
-                                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-gray-300 shadow-sm">
+                                      <div 
+                                        className={`w-8 h-8 rounded-full bg-white flex items-center justify-center border border-gray-300 shadow-sm cursor-pointer hover:shadow-md transition-all duration-200 ${
+                                          lesson.type === 'VIDEO' ? 'hover:bg-blue-50 hover:border-blue-400' : 
+                                          lesson.type === 'QUIZ' ? 'hover:bg-yellow-50 hover:border-yellow-400' :
+                                          lesson.type === 'ASSIGNMENT' ? 'hover:bg-purple-50 hover:border-purple-400' :
+                                          lesson.type === 'TEXT' ? 'hover:bg-green-50 hover:border-green-400' : 'hover:bg-blue-50 hover:border-blue-400'
+                                        }`}
+                                        onClick={() => lesson.isPreview && handlePreviewLesson(lesson)}
+                                        title={lesson.isPreview ? "Click to preview" : "Preview not available"}
+                                      >
                                         {lesson.type === 'VIDEO' ? (
-                                          <Play className="h-4 w-4 text-blue-600" />
+                                          <Play className={`h-4 w-4 ${lesson.isPreview ? 'text-blue-600' : 'text-gray-400'}`} />
                                         ) : lesson.type === 'QUIZ' ? (
-                                          <HelpCircle className="h-4 w-4 text-yellow-600" />
+                                          <HelpCircle className={`h-4 w-4 ${lesson.isPreview ? 'text-yellow-600' : 'text-gray-400'}`} />
                                         ) : lesson.type === 'ASSIGNMENT' ? (
-                                          <ClipboardList className="h-4 w-4 text-purple-600" />
+                                          <ClipboardList className={`h-4 w-4 ${lesson.isPreview ? 'text-purple-600' : 'text-gray-400'}`} />
                                         ) : lesson.type === 'TEXT' ? (
-                                          <BookOpen className="h-4 w-4 text-green-600" />
+                                          <BookOpen className={`h-4 w-4 ${lesson.isPreview ? 'text-green-600' : 'text-gray-400'}`} />
                                         ) : (
-                                          <Play className="h-4 w-4 text-blue-600" />
+                                          <Play className={`h-4 w-4 ${lesson.isPreview ? 'text-blue-600' : 'text-gray-400'}`} />
                                         )}
                                       </div>
                                       <div>
@@ -948,10 +1034,24 @@ export default function CourseDetailPage() {
                                     </div>
                                     <div className="flex items-center space-x-2">
                                       {lesson.isPreview && (
-                                        <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          className="text-xs bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 transition-colors"
+                                          onClick={() => handlePreviewLesson(lesson)}
+                                        >
                                           Preview
-                                        </Badge>
+                                        </Button>
                                       )}
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                                        onClick={() => handleShareLesson(lesson)}
+                                        title="Share lesson"
+                                      >
+                                        <Share2 className="h-3 w-3" />
+                                      </Button>
                                       <span className="text-xs text-gray-500">
                                         {formatDuration(lesson.duration)}
                                       </span>
@@ -1298,7 +1398,12 @@ export default function CourseDetailPage() {
                       <Bookmark className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
                       Add to Bookmarks
                     </Button>
-                    <Button variant="outline" className="w-full bg-transparent" size="sm">
+                    <Button 
+                      variant="outline" 
+                      className="w-full bg-transparent hover:bg-accent" 
+                      size="sm"
+                      onClick={handleShareCourse}
+                    >
                       <Share2 className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
                       Share Course
                     </Button>
@@ -1317,8 +1422,59 @@ export default function CourseDetailPage() {
           videoType={getVideoType(course.previewVideo)}
           onClose={() => setShowVideoPlayer(false)}
           title={`${course.title} - Preview`}
+          isPreview={true}
         />
       )}
+
+      {/* Lesson Preview Dialog */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Lesson Preview: {previewLesson?.title}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {previewLesson && previewLesson.videoUrl && previewLesson.type === 'VIDEO' && (
+            <div className="w-full space-y-4">
+              {/* Video Container */}
+              <div className="bg-black rounded-lg overflow-hidden">
+                <div className="aspect-video">
+                  {getVideoType(previewLesson.videoUrl) === 'youtube' ? (
+                    <iframe
+                      src={`https://www.youtube.com/embed/${previewLesson.videoUrl.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/)?.[1]}?autoplay=1&modestbranding=1&rel=0`}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video
+                      src={previewLesson.videoUrl}
+                      className="w-full h-full"
+                      controls
+                      autoPlay
+                    />
+                  )}
+                </div>
+              </div>
+              
+              {/* Lesson Info */}
+              <div className="bg-muted/50 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg">{previewLesson.title}</h3>
+                    <p className="text-sm text-muted-foreground">{previewLesson.description}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-muted-foreground">Duration: {formatDuration(previewLesson.duration)}</div>
+                    <div className="text-sm text-muted-foreground">Type: Video Lesson</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
