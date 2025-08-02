@@ -193,13 +193,13 @@ export default function CourseDetailPage() {
               bio: `${result.course.creator.firstName} ${result.course.creator.lastName} is an expert instructor with years of experience in this field.`
             },
             creatorId: result.course.creatorId,
-            sections: result.course.sections.map((section: any) => ({
+            sections: result.course.sections.map((section: Section) => ({
               id: section.id,
               title: section.title,
               description: section.description,
               order: section.order,
               duration: section.duration || 0,
-              lessons: section.lessons.map((lesson: any) => ({
+              lessons: section.lessons.map((lesson: Lesson) => ({
                 id: lesson.id,
                 title: lesson.title,
                 description: lesson.description,
@@ -380,13 +380,13 @@ export default function CourseDetailPage() {
               bio: ''
             },
             creatorId: courseResult.course.creatorId,
-            sections: courseResult.course.sections?.map((section: any) => ({
+            sections: courseResult.course.sections?.map((section: Section) => ({
               id: section.id,
               title: section.title,
               description: section.description,
               order: section.order,
               duration: section.duration || 0,
-              lessons: section.lessons?.map((lesson: any) => ({
+              lessons: section.lessons?.map((lesson: Lesson) => ({
                 id: lesson.id,
                 title: lesson.title,
                 description: lesson.description,
@@ -479,13 +479,13 @@ export default function CourseDetailPage() {
               bio: ''
             },
             creatorId: courseResult.course.creatorId,
-            sections: courseResult.course.sections?.map((section: any) => ({
+            sections: courseResult.course.sections?.map((section: Section) => ({
               id: section.id,
               title: section.title,
               description: section.description,
               order: section.order,
               duration: section.duration || 0,
-              lessons: section.lessons?.map((lesson: any) => ({
+              lessons: section.lessons?.map((lesson: Lesson) => ({
                 id: lesson.id,
                 title: lesson.title,
                 description: lesson.description,
@@ -585,13 +585,13 @@ export default function CourseDetailPage() {
               bio: ''
             },
             creatorId: courseResult.course.creatorId,
-            sections: courseResult.course.sections?.map((section: any) => ({
+            sections: courseResult.course.sections?.map((section: Section) => ({
               id: section.id,
               title: section.title,
               description: section.description,
               order: section.order,
               duration: section.duration || 0,
-              lessons: section.lessons?.map((lesson: any) => ({
+              lessons: section.lessons?.map((lesson: Lesson) => ({
                 id: lesson.id,
                 title: lesson.title,
                 description: lesson.description,
