@@ -51,6 +51,12 @@ interface Lesson {
   isPreview?: boolean
   resources?: any
   cloudinaryData?: any
+  assignmentTitle?: string
+  assignmentDescription?: string
+  assignmentDueDate?: string
+  assignmentPoints?: string
+  assignmentInstructions?: string
+  assignmentGradingCriteria?: string
 }
 
 interface Section {
@@ -60,11 +66,20 @@ interface Section {
   lessons: Lesson[]
 }
 
+interface QuizQuestion {
+  id: string
+  question: string
+  options: string[]
+  correctAnswer: number
+}
+
 interface CourseData {
   title: string
   description: string
   price: number
   category: string
+  whatYouWillLearn?: string[]
+  requirements?: string[]
   totalDuration?: number
   thumbnailUrl?: string
   previewVideoUrl?: string
@@ -81,6 +96,13 @@ interface CourseData {
       isPreview?: boolean
       cloudinaryData?: any
       videoProvider?: string
+      quizQuestions?: QuizQuestion[]
+      assignmentTitle?: string
+      assignmentDescription?: string
+      assignmentDueDate?: string
+      assignmentPoints?: string
+      assignmentInstructions?: string
+      assignmentGradingCriteria?: string
     }[]
   }[]
 }
@@ -145,8 +167,8 @@ export const createCourse = async (courseData: CourseData) => {
         language: 'en',
         status: 'DRAFT',
         tags: [],
-        requirements: [],
-        whatYouWillLearn: [],
+        requirements: courseData.requirements || [],
+        whatYouWillLearn: courseData.whatYouWillLearn || [],
         features: [],
         creatorId: user.id,
         categoryId: category.id,
@@ -170,6 +192,13 @@ export const createCourse = async (courseData: CourseData) => {
                 resources: {
                   cloudinaryData: lesson.cloudinaryData ? JSON.stringify(lesson.cloudinaryData) : null,
                   videoProvider: lesson.videoProvider || 'cloudinary',
+                  quizQuestions: lesson.quizQuestions ? JSON.stringify(lesson.quizQuestions) : null,
+                  assignmentTitle: lesson.assignmentTitle || null,
+                  assignmentDescription: lesson.assignmentDescription || null,
+                  assignmentDueDate: lesson.assignmentDueDate || null,
+                  assignmentPoints: lesson.assignmentPoints || null,
+                  assignmentInstructions: lesson.assignmentInstructions || null,
+                  assignmentGradingCriteria: lesson.assignmentGradingCriteria || null,
                 }
               }))
             }
@@ -263,6 +292,46 @@ export const getCourse = async (courseId: string) => {
   }
 }
 
+export const getInstructorStats = async (instructorId: string) => {
+  try {
+    const { userId } = await auth()
+    if (!userId) throw new Error('Unauthorized')
+
+    // Get all courses by this instructor
+    const instructorCourses = await prisma.course.findMany({
+      where: { creatorId: instructorId },
+      select: {
+        id: true,
+        rating: true,
+        reviewsCount: true,
+        studentsCount: true
+      }
+    })
+
+    // Calculate instructor statistics
+    const totalCourses = instructorCourses.length
+    const totalStudents = instructorCourses.reduce((sum, course) => sum + (course.studentsCount || 0), 0)
+    
+    // Calculate average rating from all courses
+    const coursesWithRatings = instructorCourses.filter(course => course.rating && course.rating > 0)
+    const averageRating = coursesWithRatings.length > 0 
+      ? coursesWithRatings.reduce((sum, course) => sum + (course.rating || 0), 0) / coursesWithRatings.length
+      : 0
+
+    return {
+      success: true,
+      stats: {
+        totalCourses,
+        totalStudents,
+        averageRating: Math.round(averageRating * 10) / 10 // Round to 1 decimal place
+      }
+    }
+  } catch (error) {
+    console.error('Error fetching instructor stats:', error)
+    return { success: false, error: error instanceof Error ? error.message : 'Failed to fetch instructor stats' }
+  }
+}
+
 export const updateCourse = async (courseId: string, courseData: Partial<CourseData>) => {
   try {
     const { userId } = await auth()
@@ -325,6 +394,8 @@ export const updateCourse = async (courseId: string, courseData: Partial<CourseD
         description: courseData.description,
         price: courseData.price,
         ...(categoryId && { categoryId }),
+        whatYouWillLearn: courseData.whatYouWillLearn || [],
+        requirements: courseData.requirements || [],
         thumbnail: thumbnailUrl,
         previewVideo: previewVideoUrl,
       }
@@ -375,7 +446,17 @@ export const updateCourse = async (courseId: string, courseData: Partial<CourseD
               type: (lesson.type as 'VIDEO' | 'TEXT' | 'QUIZ' | 'ASSIGNMENT') || 'VIDEO',
               isPreview: lesson.isPreview || false,
               sectionId: createdSection.id,
-              resources: lesson.cloudinaryData ? lesson.cloudinaryData : null,
+              resources: {
+                cloudinaryData: lesson.cloudinaryData ? JSON.stringify(lesson.cloudinaryData) : null,
+                videoProvider: lesson.videoProvider || 'cloudinary',
+                quizQuestions: lesson.quizQuestions ? JSON.stringify(lesson.quizQuestions) : null,
+                assignmentTitle: lesson.assignmentTitle || null,
+                assignmentDescription: lesson.assignmentDescription || null,
+                assignmentDueDate: lesson.assignmentDueDate || null,
+                assignmentPoints: lesson.assignmentPoints || null,
+                assignmentInstructions: lesson.assignmentInstructions || null,
+                assignmentGradingCriteria: lesson.assignmentGradingCriteria || null,
+              },
             }
           })
         }

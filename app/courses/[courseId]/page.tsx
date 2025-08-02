@@ -9,6 +9,19 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Separator } from "@/components/ui/separator"
+import { Textarea } from "@/components/ui/textarea"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import CourseProgressBar from "@/components/course-progress-bar"
 import CourseReviews from "@/components/course-reviews"
 import {
@@ -26,236 +39,641 @@ import {
   Globe,
   Shield,
   Smartphone,
+  HelpCircle,
+  ClipboardList,
+  BookOpen,
+  Check,
+  MessageSquare,
+  User,
+  Trash2,
+  Edit,
 } from "lucide-react"
 import { gsap } from "gsap"
 import { useLanguage } from "@/contexts/language-context"
+import { getCourse, getInstructorStats } from "@/lib/action/courses"
+import { getCurrentUser } from "@/lib/action/user"
+import { createReview, getReviews, deleteReview, editReview } from "@/lib/action/comments"
+import VideoPlayer from "@/components/video-player"
+import { toast } from "sonner"
 
-const courseData = {
-  "1": {
-    id: "1",
-    title: "Complete Web Development Bootcamp",
-    description:
-      "Learn HTML, CSS, JavaScript, React, Node.js, and more in this comprehensive course that will take you from beginner to professional web developer.",
-    longDescription:
-      "This comprehensive bootcamp covers everything you need to know to become a full-stack web developer. Starting with the fundamentals of HTML and CSS, you'll progress through JavaScript, React, Node.js, databases, and deployment strategies. By the end of this course, you'll have built multiple real-world projects and have the skills to land your first developer job.",
-    image: "/placeholder.svg?height=400&width=600",
-    instructor: {
-      name: "John Smith",
-      bio: "Senior Full Stack Developer with 10+ years of experience at top tech companies including Google and Facebook. John has taught over 100,000 students worldwide.",
-      avatar: "/placeholder.svg?height=100&width=100",
-      rating: 4.9,
-      students: 25000,
-      courses: 8,
-    },
-    duration: "40 hours",
-    students: 15420,
-    rating: 4.8,
-    reviews: 3240,
-    price: 89,
-    originalPrice: 129,
-    tags: ["Web Development", "JavaScript", "React", "Node.js"],
-    level: "Beginner to Advanced",
-    language: "English",
-    lastUpdated: "December 2023",
-    certificate: true,
-    downloadable: true,
-    mobileAccess: true,
-    lifetimeAccess: true,
-    progress: 75,
-    totalLessons: 45,
-    completedLessons: 34,
-    timeSpent: "28h 45m",
-    lastAccessed: "2 hours ago",
-    isBookmarked: false,
-    isEnrolled: true,
-    syllabus: [
-      {
-        id: 1,
-        title: "HTML & CSS Fundamentals",
-        duration: "8 hours",
-        lessons: 12,
-        completed: true,
-        description: "Learn the building blocks of web development",
-      },
-      {
-        id: 2,
-        title: "JavaScript Essentials",
-        duration: "10 hours",
-        lessons: 15,
-        completed: true,
-        description: "Master JavaScript programming concepts",
-      },
-      {
-        id: 3,
-        title: "React.js Development",
-        duration: "12 hours",
-        lessons: 18,
-        completed: false,
-        description: "Build modern user interfaces with React",
-        currentLesson: "React Hooks and State Management",
-      },
-      {
-        id: 4,
-        title: "Node.js & Express",
-        duration: "8 hours",
-        lessons: 12,
-        completed: false,
-        description: "Server-side development with Node.js",
-      },
-      {
-        id: 5,
-        title: "Database Integration",
-        duration: "6 hours",
-        lessons: 8,
-        completed: false,
-        description: "Working with databases and APIs",
-      },
-    ],
-    features: [
-      "40 hours of on-demand video",
-      "15 coding exercises",
-      "10 real-world projects",
-      "Certificate of completion",
-      "Lifetime access",
-      "Mobile and desktop access",
-      "30-day money-back guarantee",
-    ],
-    requirements: [
-      "Basic computer skills",
-      "No prior programming experience required",
-      "A computer with internet connection",
-    ],
-    whatYouWillLearn: [
-      "Build responsive websites with HTML, CSS, and JavaScript",
-      "Create modern web applications with React.js",
-      "Develop server-side applications with Node.js",
-      "Work with databases and APIs",
-      "Deploy applications to the cloud",
-      "Follow industry best practices and coding standards",
-    ],
-  },
-  "2": {
-    id: "2",
-    title: "Data Science with Python",
-    description: "Master data analysis, machine learning, and visualization with Python.",
-    longDescription:
-      "Dive deep into the world of data science with this comprehensive Python course. Learn to analyze data, create visualizations, build machine learning models, and extract insights from complex datasets.",
-    image: "/placeholder.svg?height=400&width=600",
-    instructor: {
-      name: "Sarah Johnson",
-      bio: "Lead Data Scientist at Microsoft with PhD in Computer Science. Expert in machine learning and data analysis with 8+ years of industry experience.",
-      avatar: "/placeholder.svg?height=100&width=100",
-      rating: 4.8,
-      students: 18500,
-      courses: 6,
-    },
-    duration: "35 hours",
-    students: 12350,
-    rating: 4.9,
-    reviews: 2180,
-    price: 99,
-    originalPrice: 149,
-    tags: ["Data Science", "Python", "Machine Learning", "Analytics"],
-    level: "Intermediate",
-    language: "English",
-    lastUpdated: "November 2023",
-    certificate: true,
-    downloadable: true,
-    mobileAccess: true,
-    lifetimeAccess: true,
-    progress: 45,
-    totalLessons: 38,
-    completedLessons: 17,
-    timeSpent: "15h 20m",
-    lastAccessed: "1 day ago",
-    isBookmarked: true,
-    isEnrolled: true,
-    syllabus: [
-      {
-        id: 1,
-        title: "Python for Data Science",
-        duration: "8 hours",
-        lessons: 10,
-        completed: true,
-        description: "Python fundamentals for data analysis",
-      },
-      {
-        id: 2,
-        title: "Data Analysis with Pandas",
-        duration: "10 hours",
-        lessons: 12,
-        completed: true,
-        description: "Data manipulation and analysis",
-      },
-      {
-        id: 3,
-        title: "Data Visualization",
-        duration: "8 hours",
-        lessons: 10,
-        completed: false,
-        description: "Creating charts and graphs",
-        currentLesson: "Advanced Matplotlib Techniques",
-      },
-      {
-        id: 4,
-        title: "Machine Learning Basics",
-        duration: "12 hours",
-        lessons: 15,
-        completed: false,
-        description: "Introduction to ML algorithms",
-      },
-    ],
-    features: [
-      "35 hours of video content",
-      "20 hands-on projects",
-      "Real datasets to work with",
-      "Certificate of completion",
-      "Lifetime access",
-      "Mobile and desktop access",
-    ],
-    requirements: ["Basic Python knowledge helpful", "High school level mathematics", "Computer with Python installed"],
-    whatYouWillLearn: [
-      "Analyze data with Python and Pandas",
-      "Create stunning visualizations",
-      "Build machine learning models",
-      "Work with real-world datasets",
-      "Statistical analysis techniques",
-    ],
-  },
+interface Lesson {
+  id: string
+  title: string
+  description: string | null
+  content: string | null
+  videoUrl: string | null
+  duration: number
+  order: number
+  type: string
+  isPreview: boolean
+  resources: any
+}
+
+interface Section {
+  id: string
+  title: string
+  description: string | null
+  order: number
+  duration: number
+  lessons: Lesson[]
+}
+
+interface Course {
+  id: string
+  title: string
+  slug: string
+  description: string
+  longDescription: string | null
+  thumbnail: string | null
+  previewVideo: string | null
+  price: number
+  level: string
+  language: string
+  status: string
+  tags: string[]
+  requirements: string[]
+  whatYouWillLearn: string[]
+  features: string[]
+  totalDuration: number
+  totalLessons: number
+  studentsCount: number
+  rating: number | null
+  reviewsCount: number
+  createdAt: string
+  updatedAt: string
+  hasLifetimeAccess: boolean
+  hasMobileAccess: boolean
+  hasDownloads: boolean
+  hasCertificate: boolean
+  hasDiscussions: boolean
+  category: {
+    name: string
+  }
+  instructor: {
+    name: string
+    avatar: string | null
+    bio: string
+  }
+  creatorId: string
+  sections: Section[]
 }
 
 export default function CourseDetailPage() {
   const params = useParams()
   const courseId = params.courseId as string
-  const course = courseData[courseId as keyof typeof courseData]
-  const [isBookmarked, setIsBookmarked] = useState(course?.isBookmarked || false)
+  const [course, setCourse] = useState<Course | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isBookmarked, setIsBookmarked] = useState(false)
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [isLoadingUser, setIsLoadingUser] = useState(true)
+  const [newComment, setNewComment] = useState("")
+  const [newRating, setNewRating] = useState(0)
+  const [hoveredRating, setHoveredRating] = useState(0)
+  const [reviews, setReviews] = useState<any[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [deletingReviewId, setDeletingReviewId] = useState<string | null>(null)
+  const [editingReviewId, setEditingReviewId] = useState<string | null>(null)
+  const [editComment, setEditComment] = useState("")
+  const [editRating, setEditRating] = useState(0)
+  const [editHoveredRating, setEditHoveredRating] = useState(0)
+  const [showVideoPlayer, setShowVideoPlayer] = useState(false)
+  const [instructorStats, setInstructorStats] = useState<{
+    totalCourses: number
+    totalStudents: number
+    averageRating: number
+  } | null>(null)
   const heroRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const { t, isRTL } = useLanguage()
 
   useEffect(() => {
-    const ctx = gsap.context(() => {
-      gsap.fromTo(".course-hero", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" })
+    const fetchCourse = async () => {
+      try {
+        const result = await getCourse(courseId)
+        if (result.success && result.course) {
+          // Transform the course data to match our interface
+          const transformedCourse: Course = {
+            id: result.course.id,
+            title: result.course.title,
+            slug: result.course.slug,
+            description: result.course.description,
+            longDescription: result.course.description,
+            thumbnail: result.course.thumbnail,
+            previewVideo: result.course.previewVideo,
+            price: result.course.price,
+            level: result.course.level,
+            language: result.course.language,
+            status: result.course.status,
+            tags: result.course.tags || [],
+            requirements: result.course.requirements || [],
+            whatYouWillLearn: result.course.whatYouWillLearn || [],
+            features: [],
+            totalDuration: result.course.totalDuration || 0,
+            totalLessons: result.course.totalLessons || 0,
+            studentsCount: result.course.studentsCount || 0,
+            rating: result.course.rating,
+            reviewsCount: result.course.reviewsCount || 0,
+            createdAt: result.course.createdAt.toISOString(),
+            updatedAt: result.course.updatedAt.toISOString(),
+            hasLifetimeAccess: result.course.hasLifetimeAccess,
+            hasMobileAccess: result.course.hasMobileAccess,
+            hasDownloads: result.course.hasDownloads,
+            hasCertificate: result.course.hasCertificate,
+            hasDiscussions: result.course.hasDiscussions,
+            category: {
+              name: result.course.category.name
+            },
+            instructor: {
+              name: `${result.course.creator.firstName} ${result.course.creator.lastName}`,
+              avatar: result.course.creator.avatar,
+              bio: `${result.course.creator.firstName} ${result.course.creator.lastName} is an expert instructor with years of experience in this field.`
+            },
+            creatorId: result.course.creatorId,
+            sections: result.course.sections.map(section => ({
+              id: section.id,
+              title: section.title,
+              description: section.description,
+              order: section.order,
+              duration: section.duration || 0,
+              lessons: section.lessons.map(lesson => ({
+                id: lesson.id,
+                title: lesson.title,
+                description: lesson.description,
+                content: lesson.content,
+                videoUrl: lesson.videoUrl,
+                duration: lesson.duration || 0,
+                order: lesson.order,
+                type: lesson.type,
+                isPreview: lesson.isPreview,
+                resources: lesson.resources
+              }))
+            }))
+          }
+          setCourse(transformedCourse)
+        } else {
+          toast.error("Failed to fetch course")
+        }
+      } catch (error) {
+        console.error('Error fetching course:', error)
+        toast.error("Error loading course")
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-      gsap.fromTo(
-        ".course-content",
-        { opacity: 0, y: 50 },
-        { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power2.out" },
-      )
+    if (courseId) {
+      fetchCourse()
+    }
+  }, [courseId])
 
-      gsap.fromTo(
-        ".syllabus-item",
-        { opacity: 0, x: -30 },
-        { opacity: 1, x: 0, duration: 0.6, stagger: 0.1, delay: 0.4, ease: "power2.out" },
-      )
-    })
+  // Fetch current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const result = await getCurrentUser()
+        if (result.success && result.user) {
+          setCurrentUser(result.user)
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error)
+      } finally {
+        setIsLoadingUser(false)
+      }
+    }
 
-    return () => ctx.revert()
+    fetchCurrentUser()
   }, [])
+
+  // Fetch reviews
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (course) {
+        try {
+          const result = await getReviews(course.id)
+          if (result.success && result.reviews) {
+            setReviews(result.reviews)
+          }
+        } catch (error) {
+          console.error('Error fetching reviews:', error)
+        }
+      }
+    }
+
+    fetchReviews()
+  }, [course])
+
+  // Fetch instructor statistics
+  useEffect(() => {
+    const fetchInstructorStats = async () => {
+      if (course) {
+        try {
+          // Get the instructor ID from the course creator
+          const instructorId = course.creatorId
+          if (instructorId) {
+            const result = await getInstructorStats(instructorId)
+            if (result.success && result.stats) {
+              setInstructorStats(result.stats)
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching instructor stats:', error)
+        }
+      }
+    }
+
+    fetchInstructorStats()
+  }, [course])
+
+  useEffect(() => {
+    if (course) {
+      const ctx = gsap.context(() => {
+        gsap.fromTo(".course-hero", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.8, ease: "power2.out" })
+
+        gsap.fromTo(
+          ".course-content",
+          { opacity: 0, y: 50 },
+          { opacity: 1, y: 0, duration: 0.8, delay: 0.2, ease: "power2.out" },
+        )
+
+        gsap.fromTo(
+          ".syllabus-item",
+          { opacity: 0, x: -30 },
+          { opacity: 1, x: 0, duration: 0.6, stagger: 0.1, delay: 0.4, ease: "power2.out" },
+        )
+      })
+
+      return () => ctx.revert()
+    }
+  }, [course])
 
   const handleBookmark = () => {
     setIsBookmarked(!isBookmarked)
     // Here you would typically save to backend
+  }
+
+  const handleSubmitReview = async () => {
+    if (!course || !currentUser || !newComment.trim() || newRating === 0) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const result = await createReview({
+        content: newComment,
+        courseId: course.id,
+        rating: newRating
+      })
+
+      if (result.success) {
+        toast.success("Review submitted successfully!")
+        setNewComment("")
+        setNewRating(0)
+        
+        // Refresh reviews
+        const reviewsResult = await getReviews(course.id)
+        if (reviewsResult.success && reviewsResult.reviews) {
+          setReviews(reviewsResult.reviews)
+        }
+
+        // Refresh course data to get updated statistics
+        const courseResult = await getCourse(course.id)
+        if (courseResult.success && courseResult.course) {
+          // Transform the course data to match our interface
+          const transformedCourse: Course = {
+            id: courseResult.course.id,
+            title: courseResult.course.title,
+            slug: courseResult.course.slug,
+            description: courseResult.course.description,
+            longDescription: courseResult.course.description,
+            thumbnail: courseResult.course.thumbnail,
+            previewVideo: courseResult.course.previewVideo,
+            price: courseResult.course.price,
+            level: courseResult.course.level,
+            language: courseResult.course.language,
+            status: courseResult.course.status,
+            tags: courseResult.course.tags || [],
+            requirements: courseResult.course.requirements || [],
+            whatYouWillLearn: courseResult.course.whatYouWillLearn || [],
+            features: [],
+            totalDuration: courseResult.course.totalDuration || 0,
+            totalLessons: courseResult.course.totalLessons || 0,
+            studentsCount: courseResult.course.studentsCount || 0,
+            rating: courseResult.course.rating,
+            reviewsCount: courseResult.course.reviewsCount || 0,
+            createdAt: courseResult.course.createdAt.toISOString(),
+            updatedAt: courseResult.course.updatedAt.toISOString(),
+            hasLifetimeAccess: courseResult.course.hasLifetimeAccess,
+            hasMobileAccess: courseResult.course.hasMobileAccess,
+            hasDownloads: courseResult.course.hasDownloads,
+            hasCertificate: courseResult.course.hasCertificate,
+            hasDiscussions: courseResult.course.hasDiscussions,
+            category: {
+              name: courseResult.course.category?.name || ''
+            },
+            instructor: {
+              name: `${courseResult.course.creator?.firstName || ''} ${courseResult.course.creator?.lastName || ''}`,
+              avatar: courseResult.course.creator?.avatar || null,
+              bio: ''
+            },
+            sections: courseResult.course.sections?.map(section => ({
+              id: section.id,
+              title: section.title,
+              description: section.description,
+              order: section.order,
+              duration: section.duration || 0,
+              lessons: section.lessons?.map(lesson => ({
+                id: lesson.id,
+                title: lesson.title,
+                description: lesson.description,
+                content: lesson.content,
+                videoUrl: lesson.videoUrl,
+                duration: lesson.duration || 0,
+                order: lesson.order,
+                type: lesson.type,
+                isPreview: lesson.isPreview,
+                resources: lesson.resources
+              })) || []
+            })) || []
+          }
+          setCourse(transformedCourse)
+          
+          // Refresh instructor stats
+          const instructorResult = await getInstructorStats(transformedCourse.creatorId)
+          if (instructorResult.success && instructorResult.stats) {
+            setInstructorStats(instructorResult.stats)
+          }
+        }
+      } else {
+        toast.error(result.message || "Failed to submit review")
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error)
+      toast.error("An error occurred while submitting your review")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!course || !currentUser) {
+      return
+    }
+
+    setDeletingReviewId(reviewId)
+    setIsSubmitting(true)
+    try {
+      const result = await deleteReview(reviewId)
+
+      if (result.success) {
+        toast.success("Review deleted successfully!")
+        
+        // Refresh reviews
+        const reviewsResult = await getReviews(course.id)
+        if (reviewsResult.success && reviewsResult.reviews) {
+          setReviews(reviewsResult.reviews)
+        }
+
+        // Refresh course data to get updated statistics
+        const courseResult = await getCourse(course.id)
+        if (courseResult.success && courseResult.course) {
+          // Transform the course data to match our interface
+          const transformedCourse: Course = {
+            id: courseResult.course.id,
+            title: courseResult.course.title,
+            slug: courseResult.course.slug,
+            description: courseResult.course.description,
+            longDescription: courseResult.course.description,
+            thumbnail: courseResult.course.thumbnail,
+            previewVideo: courseResult.course.previewVideo,
+            price: courseResult.course.price,
+            level: courseResult.course.level,
+            language: courseResult.course.language,
+            status: courseResult.course.status,
+            tags: courseResult.course.tags || [],
+            requirements: courseResult.course.requirements || [],
+            whatYouWillLearn: courseResult.course.whatYouWillLearn || [],
+            features: [],
+            totalDuration: courseResult.course.totalDuration || 0,
+            totalLessons: courseResult.course.totalLessons || 0,
+            studentsCount: courseResult.course.studentsCount || 0,
+            rating: courseResult.course.rating,
+            reviewsCount: courseResult.course.reviewsCount || 0,
+            createdAt: courseResult.course.createdAt.toISOString(),
+            updatedAt: courseResult.course.updatedAt.toISOString(),
+            hasLifetimeAccess: courseResult.course.hasLifetimeAccess,
+            hasMobileAccess: courseResult.course.hasMobileAccess,
+            hasDownloads: courseResult.course.hasDownloads,
+            hasCertificate: courseResult.course.hasCertificate,
+            hasDiscussions: courseResult.course.hasDiscussions,
+            category: {
+              name: courseResult.course.category?.name || ''
+            },
+            instructor: {
+              name: `${courseResult.course.creator?.firstName || ''} ${courseResult.course.creator?.lastName || ''}`,
+              avatar: courseResult.course.creator?.avatar || null,
+              bio: ''
+            },
+            sections: courseResult.course.sections?.map(section => ({
+              id: section.id,
+              title: section.title,
+              description: section.description,
+              order: section.order,
+              duration: section.duration || 0,
+              lessons: section.lessons?.map(lesson => ({
+                id: lesson.id,
+                title: lesson.title,
+                description: lesson.description,
+                content: lesson.content,
+                videoUrl: lesson.videoUrl,
+                duration: lesson.duration || 0,
+                order: lesson.order,
+                type: lesson.type,
+                isPreview: lesson.isPreview,
+                resources: lesson.resources
+              })) || []
+            })) || []
+          }
+          setCourse(transformedCourse)
+          
+          // Refresh instructor stats
+          const instructorResult = await getInstructorStats(transformedCourse.creatorId)
+          if (instructorResult.success && instructorResult.stats) {
+            setInstructorStats(instructorResult.stats)
+          }
+        }
+      } else {
+        toast.error(result.message || "Failed to delete review")
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error)
+      toast.error("An error occurred while deleting your review")
+    } finally {
+      setIsSubmitting(false)
+      setDeletingReviewId(null)
+    }
+  }
+
+  const handleEditReview = async (reviewId: string) => {
+    if (!course || !currentUser || !editComment.trim() || editRating === 0) {
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const result = await editReview(reviewId, {
+        content: editComment,
+        courseId: course.id,
+        rating: editRating
+      })
+
+      if (result.success) {
+        toast.success("Review updated successfully!")
+        setEditComment("")
+        setEditRating(0)
+        setEditingReviewId(null)
+        
+        // Refresh reviews
+        const reviewsResult = await getReviews(course.id)
+        if (reviewsResult.success && reviewsResult.reviews) {
+          setReviews(reviewsResult.reviews)
+        }
+
+        // Refresh course data to get updated statistics
+        const courseResult = await getCourse(course.id)
+        if (courseResult.success && courseResult.course) {
+          // Transform the course data to match our interface
+          const transformedCourse: Course = {
+            id: courseResult.course.id,
+            title: courseResult.course.title,
+            slug: courseResult.course.slug,
+            description: courseResult.course.description,
+            longDescription: courseResult.course.description,
+            thumbnail: courseResult.course.thumbnail,
+            previewVideo: courseResult.course.previewVideo,
+            price: courseResult.course.price,
+            level: courseResult.course.level,
+            language: courseResult.course.language,
+            status: courseResult.course.status,
+            tags: courseResult.course.tags || [],
+            requirements: courseResult.course.requirements || [],
+            whatYouWillLearn: courseResult.course.whatYouWillLearn || [],
+            features: [],
+            totalDuration: courseResult.course.totalDuration || 0,
+            totalLessons: courseResult.course.totalLessons || 0,
+            studentsCount: courseResult.course.studentsCount || 0,
+            rating: courseResult.course.rating,
+            reviewsCount: courseResult.course.reviewsCount || 0,
+            createdAt: courseResult.course.createdAt.toISOString(),
+            updatedAt: courseResult.course.updatedAt.toISOString(),
+            hasLifetimeAccess: courseResult.course.hasLifetimeAccess,
+            hasMobileAccess: courseResult.course.hasMobileAccess,
+            hasDownloads: courseResult.course.hasDownloads,
+            hasCertificate: courseResult.course.hasCertificate,
+            hasDiscussions: courseResult.course.hasDiscussions,
+            category: {
+              name: courseResult.course.category?.name || ''
+            },
+            instructor: {
+              name: `${courseResult.course.creator?.firstName || ''} ${courseResult.course.creator?.lastName || ''}`,
+              avatar: courseResult.course.creator?.avatar || null,
+              bio: ''
+            },
+            creatorId: courseResult.course.creatorId,
+            sections: courseResult.course.sections?.map(section => ({
+              id: section.id,
+              title: section.title,
+              description: section.description,
+              order: section.order,
+              duration: section.duration || 0,
+              lessons: section.lessons?.map(lesson => ({
+                id: lesson.id,
+                title: lesson.title,
+                description: lesson.description,
+                content: lesson.content,
+                videoUrl: lesson.videoUrl,
+                duration: lesson.duration || 0,
+                order: lesson.order,
+                type: lesson.type,
+                isPreview: lesson.isPreview,
+                resources: lesson.resources
+              })) || []
+            })) || []
+          }
+          setCourse(transformedCourse)
+          
+          // Refresh instructor stats
+          const instructorResult = await getInstructorStats(transformedCourse.creatorId)
+          if (instructorResult.success && instructorResult.stats) {
+            setInstructorStats(instructorResult.stats)
+          }
+        }
+      } else {
+        toast.error(result.message || "Failed to update review")
+      }
+    } catch (error) {
+      console.error('Error updating review:', error)
+      toast.error("An error occurred while updating your review")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const startEditing = (review: any) => {
+    setEditingReviewId(review.id)
+    setEditComment(review.comment)
+    setEditRating(review.rating)
+  }
+
+  const cancelEditing = () => {
+    setEditingReviewId(null)
+    setEditComment("")
+    setEditRating(0)
+  }
+
+  const handlePreviewVideo = () => {
+    if (course?.previewVideo) {
+      setShowVideoPlayer(true)
+    } else {
+      toast.error("No preview video available for this course")
+    }
+  }
+
+  const getVideoType = (url: string) => {
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+      return 'youtube'
+    } else if (url.includes('vimeo.com')) {
+      return 'vimeo'
+    } else if (url.includes('cloudinary.com')) {
+      return 'cloudinary'
+    }
+    return 'external'
+  }
+
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
+  }
+
+  const calculateTotalLessons = (sections: Section[] | undefined) => {
+    return sections?.reduce((total, section) => total + section.lessons.length, 0) || 0
+  }
+
+  const calculateTotalDuration = (sections: Section[] | undefined) => {
+    return sections?.reduce((total, section) => 
+      total + section.lessons.reduce((sectionTotal, lesson) => 
+        sectionTotal + (lesson.duration || 0), 0), 0) || 0
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen pt-20 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading course...</p>
+        </div>
+      </div>
+    )
   }
 
   if (!course) {
@@ -272,6 +690,9 @@ export default function CourseDetailPage() {
     )
   }
 
+  // Ensure course is properly typed
+  const courseData = course as Course
+
   return (
     <div className="min-h-screen pt-20">
       {/* Hero Section */}
@@ -280,64 +701,52 @@ export default function CourseDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             <div className="lg:col-span-2">
               <div className="flex flex-wrap gap-2 mb-4">
-                {course.tags.map((tag) => (
+                {courseData.tags?.map((tag: string) => (
                   <Badge key={tag} variant="secondary">
                     {tag}
                   </Badge>
                 ))}
               </div>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">{course.title}</h1>
-              <p className="text-lg text-muted-foreground mb-6">{course.longDescription}</p>
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">{courseData.title}</h1>
+              <p className="text-lg text-muted-foreground mb-6">{courseData.longDescription || courseData.description}</p>
 
               <div className={`flex items-center space-x-6 mb-8 text-sm ${isRTL ? "space-x-reverse" : ""}`}>
                 <div className="flex items-center">
                   <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold">{course.rating}</span>
+                  <span className="font-semibold">{courseData.rating ? courseData.rating.toFixed(1) : '0.0'}</span>
                   <span className="text-muted-foreground ml-1">
-                    ({course.reviews} {t("course.reviews")})
+                    ({courseData.reviewsCount || 0} {t("course.reviews")})
                   </span>
                 </div>
                 <div className="flex items-center">
                   <Users className="h-4 w-4 mr-2" />
                   <span>
-                    {course.students.toLocaleString()} {t("course.students")}
+                    {courseData.studentsCount?.toLocaleString()} {t("course.students")}
                   </span>
                 </div>
                 <div className="flex items-center">
                   <Clock className="h-4 w-4 mr-2" />
-                  <span>{course.duration}</span>
+                  <span>{formatDuration(calculateTotalDuration(courseData.sections))}</span>
                 </div>
                 <div className="flex items-center">
                   <Globe className="h-4 w-4 mr-2" />
-                  <span>{course.language}</span>
+                  <span>{courseData.language}</span>
                 </div>
               </div>
 
               <div className={`flex items-center space-x-4 mb-6 ${isRTL ? "space-x-reverse" : ""}`}>
                 <Image
-                  src={course.instructor.avatar || "/placeholder.svg"}
-                  alt={course.instructor.name}
+                  src={courseData.instructor.avatar || "/placeholder.svg"}
+                  alt={courseData.instructor.name}
                   width={50}
                   height={50}
                   className="rounded-full"
                 />
                 <div>
-                  <p className="font-semibold">{course.instructor.name}</p>
+                  <p className="font-semibold">{courseData.instructor.name}</p>
                   <p className="text-sm text-muted-foreground">{t("course.instructor")}</p>
                 </div>
               </div>
-
-              {course.isEnrolled && (
-                <div className="mb-6">
-                  <CourseProgressBar
-                    progress={course.progress}
-                    totalLessons={course.totalLessons}
-                    completedLessons={course.completedLessons}
-                    timeSpent={course.timeSpent}
-                    lastAccessed={course.lastAccessed}
-                  />
-                </div>
-              )}
             </div>
 
             {/* Course Preview Card */}
@@ -345,7 +754,7 @@ export default function CourseDetailPage() {
               <Card className="sticky top-24">
                 <div className="relative">
                   <Image
-                    src={course.image || "/placeholder.svg"}
+                    src={course.thumbnail || "/placeholder.svg"}
                     alt={course.title}
                     width={400}
                     height={225}
@@ -353,6 +762,7 @@ export default function CourseDetailPage() {
                   />
                   <Button
                     size="lg"
+                    onClick={handlePreviewVideo}
                     className="absolute inset-0 m-auto w-16 h-16 rounded-full bg-white/90 hover:bg-white text-primary hover:text-primary"
                   >
                     <Play className="h-6 w-6 ml-1" />
@@ -362,9 +772,6 @@ export default function CourseDetailPage() {
                   <div className="flex items-center justify-between mb-4">
                     <div>
                       <span className="text-3xl font-bold">${course.price}</span>
-                      {course.originalPrice && (
-                        <span className="text-lg text-muted-foreground line-through ml-2">${course.originalPrice}</span>
-                      )}
                     </div>
                     <Button
                       variant="ghost"
@@ -377,44 +784,22 @@ export default function CourseDetailPage() {
                   </div>
 
                   <div className="space-y-3 mb-6">
-                    {course.isEnrolled ? (
-                      <div className="space-y-2">
-                        <Link href={`/courses/${course.id}/learn`}>
-                          <Button size="lg" className="w-full">
-                            <Play className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
-                            {t("course.continuelearning")}
-                          </Button>
-                        </Link>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Link href={`/courses/${course.id}/analytics`}>
-                            <Button variant="outline" size="sm" className="w-full bg-transparent">
-                              <BarChart3 className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
-                              {t("course.analytics")}
-                            </Button>
-                          </Link>
-                          {course.progress === 100 && (
-                            <Link href={`/courses/${course.id}/certificate`}>
-                              <Button variant="outline" size="sm" className="w-full bg-transparent">
-                                <Award className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
-                                {t("course.certificate")}
-                              </Button>
-                            </Link>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Link href="/payment">
-                          <Button size="lg" className="w-full">
-                            {t("course.enrollNow")}
-                          </Button>
-                        </Link>
-                        <Button variant="outline" size="lg" className="w-full bg-transparent">
-                          <Play className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
-                          {t("course.previewCourse")}
+                    <div className="space-y-2">
+                      <Link href="/payment">
+                        <Button size="lg" className="w-full">
+                          {t("course.enrollNow")}
                         </Button>
-                      </div>
-                    )}
+                      </Link>
+                      <Button 
+                        variant="outline" 
+                        size="lg" 
+                        className="w-full bg-transparent"
+                        onClick={handlePreviewVideo}
+                      >
+                        <Play className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
+                        {t("course.previewCourse")}
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="space-y-2 text-sm">
@@ -422,19 +807,19 @@ export default function CourseDetailPage() {
                       <Shield className="h-4 w-4 mr-2 text-green-500" />
                       <span>{t("course.moneyBackGuarantee")}</span>
                     </div>
-                    {course.lifetimeAccess && (
+                    {course.hasLifetimeAccess && (
                       <div className="flex items-center">
                         <Clock className="h-4 w-4 mr-2 text-blue-500" />
                         <span>{t("course.lifetimeAccess")}</span>
                       </div>
                     )}
-                    {course.mobileAccess && (
+                    {course.hasMobileAccess && (
                       <div className="flex items-center">
                         <Smartphone className="h-4 w-4 mr-2 text-purple-500" />
                         <span>{t("course.mobileAccess")}</span>
                       </div>
                     )}
-                    {course.certificate && (
+                    {course.hasCertificate && (
                       <div className="flex items-center">
                         <Award className="h-4 w-4 mr-2 text-yellow-500" />
                         <span>Certificate of completion</span>
@@ -468,7 +853,7 @@ export default function CourseDetailPage() {
             {/* Main Content */}
             <div className="lg:col-span-2">
               <Tabs defaultValue="overview" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="overview">{t("course.overview")}</TabsTrigger>
                   <TabsTrigger value="curriculum">{t("course.curriculum")}</TabsTrigger>
                   <TabsTrigger value="instructor">{t("course.instructor")}</TabsTrigger>
@@ -479,7 +864,7 @@ export default function CourseDetailPage() {
                   <div>
                     <h2 className="text-2xl font-bold mb-4">{t("course.whatYouWillLearn")}</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {course.whatYouWillLearn.map((item, index) => (
+                      {course.whatYouWillLearn?.map((item, index) => (
                         <div key={index} className={`flex items-start space-x-3 ${isRTL ? "space-x-reverse" : ""}`}>
                           <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
                           <span>{item}</span>
@@ -491,7 +876,7 @@ export default function CourseDetailPage() {
                   <div>
                     <h2 className="text-2xl font-bold mb-4">{t("course.requirements")}</h2>
                     <ul className="space-y-2">
-                      {course.requirements.map((requirement, index) => (
+                      {course.requirements?.map((requirement, index) => (
                         <li key={index} className={`flex items-start space-x-3 ${isRTL ? "space-x-reverse" : ""}`}>
                           <div className="w-2 h-2 bg-muted-foreground rounded-full mt-2 flex-shrink-0" />
                           <span>{requirement}</span>
@@ -499,60 +884,90 @@ export default function CourseDetailPage() {
                       ))}
                     </ul>
                   </div>
-
-                  <div>
-                    <h2 className="text-2xl font-bold mb-4">{t("course.courseFeatures")}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {course.features.map((feature, index) => (
-                        <div key={index} className={`flex items-start space-x-3 ${isRTL ? "space-x-reverse" : ""}`}>
-                          <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </TabsContent>
 
                 <TabsContent value="curriculum" className="space-y-4">
                   <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold">{t("course.curriculum")}</h2>
                     <div className="text-sm text-muted-foreground">
-                      {course.totalLessons} lessons • {course.duration}
+                      {calculateTotalLessons(course.sections)} lessons • {formatDuration(calculateTotalDuration(course.sections))}
                     </div>
                   </div>
 
                   <div className="space-y-4">
-                    {course.syllabus.map((section, index) => (
-                      <Card key={section.id} className="syllabus-item">
+                    {course.sections?.map((section, index) => (
+                      <Card key={section.id} className="syllabus-item bg-white border border-gray-200 shadow-sm">
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
                             <div className={`flex items-center space-x-3 ${isRTL ? "space-x-reverse" : ""}`}>
-                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 border border-blue-300 text-blue-600 font-semibold text-sm">
                                 {index + 1}
                               </div>
                               <div>
-                                <CardTitle className="text-lg">{section.title}</CardTitle>
-                                <p className="text-sm text-muted-foreground">{section.description}</p>
+                                <CardTitle className="text-lg text-gray-900">{section.title}</CardTitle>
+                                <p className="text-sm text-gray-600">{section.description}</p>
                               </div>
                             </div>
                             <div
-                              className={`flex items-center space-x-4 text-sm text-muted-foreground ${isRTL ? "space-x-reverse" : ""}`}
+                              className={`flex items-center space-x-4 text-sm text-gray-500 ${isRTL ? "space-x-reverse" : ""}`}
                             >
-                              <span>{section.lessons} lessons</span>
-                              <span>{section.duration}</span>
-                              {section.completed ? (
-                                <CheckCircle className="h-5 w-5 text-green-500" />
-                              ) : (
-                                <Play className="h-5 w-5" />
-                              )}
+                              <span>{section.lessons.length} lessons</span>
+                              <span>{formatDuration(section.lessons.reduce((total, lesson) => total + (lesson.duration || 0), 0))}</span>
+                              <Play className="h-5 w-5 text-gray-400" />
                             </div>
                           </div>
                         </CardHeader>
-                        {section.currentLesson && (
+                        
+                        <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem value={`section-${section.id}`} className="border-none">
+                            <AccordionTrigger className="px-6 py-2 hover:bg-gray-50 rounded-lg mx-4 mb-2 text-gray-700">
+                              <span className="text-sm">View Lessons</span>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-6 pb-4">
+                              <div className="space-y-3">
+                                {section.lessons?.map((lesson, lessonIndex) => (
+                                  <div key={lesson.id} className="flex items-center justify-between py-3 px-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="flex items-center space-x-3">
+                                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center border border-gray-300 shadow-sm">
+                                        {lesson.type === 'VIDEO' ? (
+                                          <Play className="h-4 w-4 text-blue-600" />
+                                        ) : lesson.type === 'QUIZ' ? (
+                                          <HelpCircle className="h-4 w-4 text-yellow-600" />
+                                        ) : lesson.type === 'ASSIGNMENT' ? (
+                                          <ClipboardList className="h-4 w-4 text-purple-600" />
+                                        ) : lesson.type === 'TEXT' ? (
+                                          <BookOpen className="h-4 w-4 text-green-600" />
+                                        ) : (
+                                          <Play className="h-4 w-4 text-blue-600" />
+                                        )}
+                                      </div>
+                                      <div>
+                                        <p className="text-sm font-medium text-gray-900">{lesson.title}</p>
+                                        <p className="text-xs text-gray-600">{lesson.description}</p>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      {lesson.isPreview && (
+                                        <Badge variant="outline" className="text-xs bg-blue-50 border-blue-200 text-blue-700">
+                                          Preview
+                                        </Badge>
+                                      )}
+                                      <span className="text-xs text-gray-500">
+                                        {formatDuration(lesson.duration)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+
+                        {index === 0 && (
                           <CardContent className="pt-0">
-                            <div className="bg-muted/50 rounded-lg p-3">
-                              <p className="text-xs text-muted-foreground mb-1">Current Lesson:</p>
-                              <p className="text-sm font-medium">{section.currentLesson}</p>
+                            <div className="bg-blue-50 rounded-lg p-3 mx-4 mb-4 border border-blue-200">
+                              <p className="text-xs text-blue-600 mb-1">Current Lesson:</p>
+                              <p className="text-sm font-medium text-gray-900">{section.lessons[0]?.title || "Introduction to the Course"}</p>
                             </div>
                           </CardContent>
                         )}
@@ -564,27 +979,33 @@ export default function CourseDetailPage() {
                 <TabsContent value="instructor" className="space-y-6">
                   <div className={`flex items-start space-x-6 ${isRTL ? "space-x-reverse" : ""}`}>
                     <Image
-                      src={course.instructor.avatar || "/placeholder.svg"}
-                      alt={course.instructor.name}
+                      src={courseData.instructor.avatar || "/placeholder.svg"}
+                      alt={courseData.instructor.name}
                       width={120}
                       height={120}
                       className="rounded-full"
                     />
                     <div className="flex-1">
-                      <h2 className="text-2xl font-bold mb-2">{course.instructor.name}</h2>
-                      <p className="text-muted-foreground mb-4">{course.instructor.bio}</p>
+                      <h2 className="text-2xl font-bold mb-2">{courseData.instructor.name}</h2>
+                      <p className="text-muted-foreground mb-4">{courseData.instructor.bio}</p>
 
                       <div className="grid grid-cols-3 gap-4 text-center">
                         <div>
-                          <div className="text-2xl font-bold">{course.instructor.rating}</div>
+                          <div className="text-2xl font-bold">
+                            {instructorStats ? instructorStats.averageRating.toFixed(1) : '0.0'}
+                          </div>
                           <div className="text-sm text-muted-foreground">{t("course.rating")}</div>
                         </div>
                         <div>
-                          <div className="text-2xl font-bold">{course.instructor.students.toLocaleString()}</div>
+                          <div className="text-2xl font-bold">
+                            {instructorStats ? instructorStats.totalStudents.toLocaleString() : '0'}
+                          </div>
                           <div className="text-sm text-muted-foreground">{t("course.students")}</div>
                         </div>
                         <div>
-                          <div className="text-2xl font-bold">{course.instructor.courses}</div>
+                          <div className="text-2xl font-bold">
+                            {instructorStats ? instructorStats.totalCourses : '0'}
+                          </div>
                           <div className="text-sm text-muted-foreground">Courses</div>
                         </div>
                       </div>
@@ -596,10 +1017,237 @@ export default function CourseDetailPage() {
                   <CourseReviews
                     courseId={course.id}
                     reviews={[]}
-                    averageRating={course.rating}
-                    totalReviews={course.reviews}
-                    canReview={course.isEnrolled}
+                    averageRating={course.rating || 0}
+                    totalReviews={course.reviewsCount || 0}
+                    canReview={false}
                   />
+                  
+                  {/* Comment Section */}
+                  <div className="mt-8 space-y-6">
+                    {/* Write Comment */}
+                    {currentUser && (
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Write a Review</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center space-x-4">
+                            <Image
+                              src={currentUser.avatar || "/placeholder.svg"}
+                              alt={`${currentUser.firstName} ${currentUser.lastName}`}
+                              width={40}
+                              height={40}
+                              className="rounded-full"
+                            />
+                            <div>
+                              <h4 className="font-semibold">{`${currentUser.firstName} ${currentUser.lastName}`}</h4>
+                              <p className="text-sm text-muted-foreground">Share your experience with this course</p>
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Your Rating</label>
+                            <div className="flex space-x-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-5 w-5 cursor-pointer hover:scale-110 transition-transform ${
+                                    star <= (hoveredRating || newRating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                  }`}
+                                  onClick={() => setNewRating(star)}
+                                  onMouseEnter={() => setHoveredRating(star)}
+                                  onMouseLeave={() => setHoveredRating(0)}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-2 block">Your Comment</label>
+                            <Textarea
+                              placeholder="Share your experience with this course..."
+                              value={newComment}
+                              onChange={(e) => setNewComment(e.target.value)}
+                              rows={4}
+                              className="min-h-[100px]"
+                            />
+                          </div>
+                                           <Button
+                   disabled={!newComment.trim() || newRating === 0 || isSubmitting}
+                   onClick={handleSubmitReview}
+                 >
+                   {isSubmitting ? "Submitting..." : "Submit Review"}
+                 </Button>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                               {/* Reviews List */}
+           <Card>
+             <CardHeader>
+               <div className="flex items-center justify-between">
+                 <CardTitle>Reviews ({reviews.length})</CardTitle>
+                 <select className="text-sm border rounded px-3 py-1">
+                   <option value="newest">Newest First</option>
+                   <option value="oldest">Oldest First</option>
+                   <option value="helpful">Most Helpful</option>
+                 </select>
+               </div>
+             </CardHeader>
+             <CardContent className="space-y-6">
+               {!currentUser && !isLoadingUser ? (
+                 <div className="text-center py-8">
+                   <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                   <h4 className="text-lg font-medium mb-2">Sign in to review</h4>
+                   <p className="text-sm text-muted-foreground mb-4">Join the discussion by signing in to your account</p>
+                   <Link href="/sign-in">
+                     <Button>Sign In</Button>
+                   </Link>
+                 </div>
+               ) : reviews.length === 0 ? (
+                 <div className="text-center py-8">
+                   <MessageSquare className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                   <h4 className="text-lg font-medium mb-2">No reviews yet</h4>
+                   <p className="text-sm text-muted-foreground">Be the first to share your thoughts about this course!</p>
+                 </div>
+               ) : (
+                 <div className="space-y-6">
+                   {reviews.map((review) => (
+                     <div key={review.id} className="border-b border-gray-200 pb-6 last:border-b-0">
+                       <div className="flex items-start space-x-4">
+                         <Image
+                           src={review.user.avatar || "/placeholder.svg"}
+                           alt={`${review.user.firstName} ${review.user.lastName}`}
+                           width={40}
+                           height={40}
+                           className="rounded-full"
+                         />
+                         <div className="flex-1">
+                           <div className="flex items-center justify-between mb-2">
+                             <div className="flex items-center space-x-2">
+                               <h4 className="font-semibold">{`${review.user.firstName} ${review.user.lastName}`}</h4>
+                               <div className="flex space-x-1">
+                                 {[1, 2, 3, 4, 5].map((star) => (
+                                   <Star
+                                     key={star}
+                                     className={`h-4 w-4 ${
+                                       star <= review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                     }`}
+                                   />
+                                 ))}
+                               </div>
+                             </div>
+                             {/* Show edit/delete buttons only for current user's reviews */}
+                             {currentUser && 
+                              `${currentUser.firstName} ${currentUser.lastName}` === `${review.user.firstName} ${review.user.lastName}` && (
+                               <div className="flex space-x-2">
+                                 <Button
+                                   variant="ghost"
+                                   size="sm"
+                                   onClick={() => startEditing(review)}
+                                   disabled={isSubmitting || editingReviewId === review.id}
+                                   className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                 >
+                                   <Edit className="h-4 w-4" />
+                                 </Button>
+                                 <AlertDialog>
+                                   <AlertDialogTrigger asChild>
+                                     <Button
+                                       variant="ghost"
+                                       size="sm"
+                                       disabled={isSubmitting || deletingReviewId === review.id}
+                                       className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                     >
+                                       {deletingReviewId === review.id ? (
+                                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-red-500 border-t-transparent" />
+                                       ) : (
+                                         <Trash2 className="h-4 w-4" />
+                                       )}
+                                     </Button>
+                                   </AlertDialogTrigger>
+                                   <AlertDialogContent>
+                                     <AlertDialogHeader>
+                                       <AlertDialogTitle>Delete Review</AlertDialogTitle>
+                                       <AlertDialogDescription>
+                                         Are you sure you want to delete your review? This action cannot be undone.
+                                       </AlertDialogDescription>
+                                     </AlertDialogHeader>
+                                     <AlertDialogFooter>
+                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                       <AlertDialogAction
+                                         onClick={() => handleDeleteReview(review.id)}
+                                         disabled={isSubmitting || deletingReviewId === review.id}
+                                         className="bg-red-500 hover:bg-red-600"
+                                       >
+                                         {deletingReviewId === review.id ? "Deleting..." : "Delete Review"}
+                                       </AlertDialogAction>
+                                     </AlertDialogFooter>
+                                   </AlertDialogContent>
+                                 </AlertDialog>
+                               </div>
+                             )}
+                           </div>
+                           {editingReviewId === review.id ? (
+                             <div className="space-y-4 mt-4">
+                               <div>
+                                 <label className="text-sm font-medium mb-2 block">Your Rating</label>
+                                 <div className="flex space-x-1">
+                                   {[1, 2, 3, 4, 5].map((star) => (
+                                     <Star
+                                       key={star}
+                                       className={`h-5 w-5 cursor-pointer hover:scale-110 transition-transform ${
+                                         star <= (editHoveredRating || editRating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                       }`}
+                                       onClick={() => setEditRating(star)}
+                                       onMouseEnter={() => setEditHoveredRating(star)}
+                                       onMouseLeave={() => setEditHoveredRating(0)}
+                                     />
+                                   ))}
+                                 </div>
+                               </div>
+                               <div>
+                                 <label className="text-sm font-medium mb-2 block">Your Comment</label>
+                                 <Textarea
+                                   placeholder="Share your experience with this course..."
+                                   value={editComment}
+                                   onChange={(e) => setEditComment(e.target.value)}
+                                   rows={4}
+                                   className="min-h-[100px]"
+                                 />
+                               </div>
+                               <div className="flex space-x-2">
+                                 <Button
+                                   size="sm"
+                                   onClick={() => handleEditReview(review.id)}
+                                   disabled={!editComment.trim() || editRating === 0 || isSubmitting}
+                                 >
+                                   {isSubmitting ? "Updating..." : "Update Review"}
+                                 </Button>
+                                 <Button
+                                   variant="outline"
+                                   size="sm"
+                                   onClick={cancelEditing}
+                                   disabled={isSubmitting}
+                                 >
+                                   Cancel
+                                 </Button>
+                               </div>
+                             </div>
+                           ) : (
+                             <>
+                               <p className="text-sm text-gray-600 mb-2">{review.comment}</p>
+                               <p className="text-xs text-gray-400">
+                                 {new Date(review.createdAt).toLocaleDateString()}
+                               </p>
+                             </>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+                   ))}
+                 </div>
+               )}
+             </CardContent>
+           </Card>
+                  </div>
                 </TabsContent>
               </Tabs>
             </div>
@@ -618,63 +1266,60 @@ export default function CourseDetailPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("course.duration")}:</span>
-                      <span className="font-medium">{course.duration}</span>
+                      <span className="font-medium">{formatDuration(calculateTotalDuration(course.sections))}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Lessons:</span>
-                      <span className="font-medium">{course.totalLessons}</span>
+                      <span className="font-medium">{calculateTotalLessons(course.sections)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Language:</span>
                       <span className="font-medium">{course.language}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Last Updated:</span>
-                      <span className="font-medium">{course.lastUpdated}</span>
+                      <span className="text-muted-foreground">Category:</span>
+                      <span className="font-medium">{course.category?.name}</span>
                     </div>
                   </CardContent>
                 </Card>
 
-                {course.isEnrolled && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Quick Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Link href={`/courses/${course.id}/learn`}>
-                        <Button className="w-full" size="sm">
-                          <Play className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
-                          {t("course.continuelearning")}
-                        </Button>
-                      </Link>
-                      <Link href={`/courses/${course.id}/analytics`}>
-                        <Button variant="outline" className="w-full bg-transparent" size="sm">
-                          <BarChart3 className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
-                          View Analytics
-                        </Button>
-                      </Link>
-                      <Link href="/bookmarks">
-                        <Button variant="outline" className="w-full bg-transparent" size="sm">
-                          <Bookmark className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
-                          My Bookmarks
-                        </Button>
-                      </Link>
-                      {course.progress === 100 && (
-                        <Link href={`/courses/${course.id}/certificate`}>
-                          <Button variant="outline" className="w-full bg-transparent" size="sm">
-                            <Award className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
-                            Get Certificate
-                          </Button>
-                        </Link>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Quick Actions</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Link href="/payment">
+                      <Button className="w-full" size="sm">
+                        <Play className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
+                        Enroll Now
+                      </Button>
+                    </Link>
+                    <Button variant="outline" className="w-full bg-transparent" size="sm">
+                      <Bookmark className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
+                      Add to Bookmarks
+                    </Button>
+                    <Button variant="outline" className="w-full bg-transparent" size="sm">
+                      <Share2 className={`h-4 w-4 ${isRTL ? "ml-2 mr-0" : "mr-2"}`} />
+                      Share Course
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Video Player Modal */}
+      {showVideoPlayer && course?.previewVideo && (
+        <VideoPlayer
+          videoUrl={course.previewVideo}
+          videoType={getVideoType(course.previewVideo)}
+          onClose={() => setShowVideoPlayer(false)}
+          title={`${course.title} - Preview`}
+        />
+      )}
     </div>
   )
 }
+

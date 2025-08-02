@@ -86,50 +86,37 @@ const featuredCourses = [
 const categories = [
   {
     name: "Family & Relationships",
-    image: "/placeholder.svg?height=300&width=400",
-    courses: 45,
+    image: "/images/sandy-millar-KhStXRVhfog-unsplash.jpg",
     description: "Build stronger relationships and family bonds",
     size: "large", // large, medium, small
   },
   {
     name: "Physical & Mental Health",
-    image: "/placeholder.svg?height=200&width=300",
-    courses: 67,
+    image: "/images/marcel-strauss-fzqxoFJytiE-unsplash.jpg",
     description: "Wellness and mental health courses",
     size: "medium",
   },
   {
     name: "Technology & Development",
-    image: "/placeholder.svg?height=200&width=300",
-    courses: 120,
+    image: "/images/florian-olivo-JNz9bQD3Oio-unsplash.jpg",
     description: "Programming and tech skills",
     size: "medium",
   },
   {
     name: "Academic Courses",
-    image: "/placeholder.svg?height=200&width=300",
-    courses: 89,
+    image: "/images/priscilla-du-preez-ggeZ9oyI-PE-unsplash_48.jpg",
     description: "Academic subjects and teaching",
     size: "small",
   },
   {
-    name: "Lifestyle Development",
-    image: "/placeholder.svg?height=200&width=300",
-    courses: 54,
-    description: "Personal growth and lifestyle",
-    size: "small",
-  },
-  {
     name: "Arts & Design",
-    image: "/placeholder.svg?height=200&width=300",
-    courses: 76,
+    image: "/images/birmingham-museums-trust-wKlHsooRVbg-unsplash_42.jpg",
     description: "Creative arts and design skills",
     size: "small",
   },
   {
     name: "Professional Skills",
-    image: "/placeholder.svg?height=300&width=400",
-    courses: 98,
+    image: "/images/vitaly-gariev-Z6ogoeso9BI-unsplash.jpg",
     description: "Business and professional development",
     size: "large",
   },
@@ -544,7 +531,7 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {categories.map((category, index) => (
-              <Link key={category.name} href="/courses">
+              <Link key={category.name} href={`/courses/category/${category.name}`}>
                 <div className="category-card group relative overflow-hidden rounded-2xl cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl h-[300px]">
                   <div className="absolute inset-0">
                     <Image
@@ -561,7 +548,6 @@ export default function HomePage() {
                       {category.name}
                     </h3>
                     <p className="text-sm opacity-90 mb-2">{category.description}</p>
-                    <p className="text-xs opacity-75">{category.courses} courses</p>
                   </div>
                 </div>
               </Link>

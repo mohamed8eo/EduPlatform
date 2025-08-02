@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Mail, Phone, MapPin, Send } from "lucide-react"
 import { gsap } from "gsap"
+import { toast } from "sonner"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -53,6 +54,7 @@ export default function ContactPage() {
     e.preventDefault()
     // Handle form submission here
     console.log("Form submitted:", formData)
+    toast.success("Message sent successfully")
     // Reset form
     setFormData({
       name: "",
@@ -158,7 +160,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold">Email</h3>
-                    <p className="text-muted-foreground">support@eduplatform.com</p>
+                    <p className="text-muted-foreground">mohamedmahomed403@gmail.com</p>
                   </div>
                 </div>
 
@@ -168,7 +170,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-semibold">Phone</h3>
-                    <p className="text-muted-foreground">+1 (555) 123-4567</p>
+                    <p className="text-muted-foreground">+20 103 256 2631</p>
                   </div>
                 </div>
 
@@ -179,9 +181,7 @@ export default function ContactPage() {
                   <div>
                     <h3 className="font-semibold">Address</h3>
                     <p className="text-muted-foreground">
-                      123 Education Street
-                      <br />
-                      Learning City, LC 12345
+                      Dakahlia, Egypt
                     </p>
                   </div>
                 </div>

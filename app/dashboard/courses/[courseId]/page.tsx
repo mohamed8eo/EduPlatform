@@ -38,7 +38,9 @@ import {
   Lock,
   Unlock,
   Copy,
-  ExternalLink
+  ExternalLink,
+  HelpCircle,
+  ClipboardList
 } from "lucide-react"
 import { getCourse } from '@/lib/action/courses'
 import { toast } from "sonner"
@@ -417,32 +419,58 @@ export default function CourseDetailsPage() {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>What You'll Learn</CardTitle>
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30">
+                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-green-900 dark:text-green-100">What You'll Learn</CardTitle>
+                        <p className="text-sm text-green-700 dark:text-green-300">Master these essential skills and concepts</p>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {course.whatYouWillLearn?.map((item, index) => (
-                        <div key={index} className="flex items-start space-x-2">
-                          <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-sm">{item}</span>
+                        <div 
+                          key={index} 
+                          className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-white/10 hover:bg-white/80 dark:hover:bg-white/20 transition-colors duration-200"
+                        >
+                          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-green-500 text-white text-xs font-semibold flex-shrink-0 mt-0.5">
+                            {index + 1}
+                          </div>
+                          <span className="text-green-900 dark:text-green-100 font-medium">{item}</span>
                         </div>
                       ))}
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Requirements</CardTitle>
+                <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30">
+                        <div className="w-5 h-5 rounded-full bg-blue-600 dark:bg-blue-400"></div>
+                      </div>
+                      <div>
+                        <CardTitle className="text-xl text-blue-900 dark:text-blue-100">Requirements</CardTitle>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">What you need to get started</p>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {course.requirements?.map((req, index) => (
-                        <div key={index} className="flex items-start space-x-2">
-                          <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-                          <span className="text-sm">{req}</span>
+                        <div 
+                          key={index} 
+                          className="flex items-start gap-3 p-4 rounded-lg bg-white/60 dark:bg-white/10 hover:bg-white/80 dark:hover:bg-white/20 transition-colors duration-200"
+                        >
+                          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500 text-white text-xs font-semibold flex-shrink-0 mt-0.5">
+                            {index + 1}
+                          </div>
+                          <span className="text-blue-900 dark:text-blue-100 font-medium">{req}</span>
                         </div>
                       ))}
                     </div>
@@ -486,9 +514,16 @@ export default function CourseDetailsPage() {
                                     >
                                       {lesson.type === 'VIDEO' ? (
                                         <Play className="h-4 w-4" />
-                                      ) : (
-                                        <FileText className="h-4 w-4" />
-                                      )}
+                                      ) :
+                                      lesson.type === 'QUIZ' ? (
+                                        <HelpCircle className="h-4 w-4" />
+                                      ) :
+                                      lesson.type === 'ASSIGNMENT' ? (
+                                        <ClipboardList className="h-4 w-4" />
+                                      ) :
+                                      lesson.type === 'TEXT' ? (
+                                        <BookOpen className="h-4 w-4" />
+                                      ) : null}
                                     </div>
                                     <div>
                                       <p className="text-sm font-medium">{lesson.title}</p>

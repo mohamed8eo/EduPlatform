@@ -6,12 +6,16 @@ import prisma from '@/lib/db'
 
 export async function POST(req: Request) {
   const SIGNING_SECRET = process.env.SIGNING_SECRET
-  if (!SIGNING_SECRET) {
+  
+  // In development, allow webhook to work without verification
+  const isDevelopment = process.env.NODE_ENV === 'development'
+  
+  if (!SIGNING_SECRET && !isDevelopment) {
     throw new Error('Error: Please add SIGNING_SECRET from Clerk Dashboard to .env or .env.local')
   }
 
   // Create new Svix instance with secret
-  const wh = new Webhook(SIGNING_SECRET)
+  const wh = new Webhook(SIGNING_SECRET || 'dummy-secret')
 
   // Get headers
   const headerPayload = await headers()
@@ -30,20 +34,29 @@ export async function POST(req: Request) {
   const payload = await req.json()
   const body = JSON.stringify(payload)
 
+  // Verify payload with headers (skip in development)
   let evt: WebhookEvent
-
-  // Verify payload with headers
-  try {
-    evt = wh.verify(body, {
-      'svix-id': svix_id,
-      'svix-timestamp': svix_timestamp,
-      'svix-signature': svix_signature,
-    }) as WebhookEvent
-  } catch (err) {
-    console.error('Error: Could not verify webhook:', err)
-    return new Response('Error: Verification error', {
-      status: 400,
-    })
+  
+  if (isDevelopment) {
+    // In development, just parse the payload without verification
+    evt = payload as WebhookEvent
+  } else {
+    try {
+      evt = wh.verify(body, {
+        'svix-id': svix_id,
+        'svix-timestamp': svix_timestamp,
+        'svix-signature': svix_signature,
+      }) as WebhookEvent
+    } catch (err) {
+      console.error('Error: Could not verify webhook:', err)
+      // Log more details about the error
+      if (err instanceof Error) {
+        console.error('Webhook verification error details:', err.message)
+      }
+      return new Response('Error: Verification error', {
+        status: 400,
+      })
+    }
   }
 
 
